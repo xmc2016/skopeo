@@ -216,15 +216,7 @@ func getImageTags(ctx context.Context, sysCtx *types.SystemContext, repoRef refe
 	}
 	tags, err := docker.GetRepositoryTags(ctx, sysCtx, dockerRef)
 	if err != nil {
-		var unauthorizedForCredentials docker.ErrUnauthorizedForCredentials
-		if errors.As(err, &unauthorizedForCredentials) {
-			// Some registries may decide to block the "list all tags" endpoint.
-			// Gracefully allow the sync to continue in this case.
-			logrus.Warnf("Registry disallows tag list retrieval: %s", err)
-			tags = nil
-		} else {
-			return nil, fmt.Errorf("Error determining repository tags for image %s: %w", name, err)
-		}
+		return nil, fmt.Errorf("Error determining repository tags for image %s: %w", name, err)
 	}
 
 	return tags, nil
