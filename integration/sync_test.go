@@ -544,11 +544,11 @@ func (s *SyncSuite) TestFailsWithDockerSourceNoRegistry(c *check.C) {
 	tmpDir := c.MkDir()
 
 	//untagged
-	assertSkopeoFails(c, ".*invalid status code from registry 404.*",
+	assertSkopeoFails(c, ".*StatusCode: 404.*",
 		"sync", "--scoped", "--src", "docker", "--dest", "dir", regURL, tmpDir)
 
 	//tagged
-	assertSkopeoFails(c, ".*invalid status code from registry 404.*",
+	assertSkopeoFails(c, ".*StatusCode: 404.*",
 		"sync", "--scoped", "--src", "docker", "--dest", "dir", regURL+":thetag", tmpDir)
 }
 
@@ -561,7 +561,7 @@ func (s *SyncSuite) TestFailsWithDockerSourceUnauthorized(c *check.C) {
 		"sync", "--scoped", "--src", "docker", "--dest", "dir", repo, tmpDir)
 
 	//tagged
-	assertSkopeoFails(c, ".*unauthorized: authentication required.*",
+	assertSkopeoFails(c, ".*requested access to the resource is denied.*",
 		"sync", "--scoped", "--src", "docker", "--dest", "dir", repo+":thetag", tmpDir)
 }
 
@@ -570,7 +570,7 @@ func (s *SyncSuite) TestFailsWithDockerSourceNotExisting(c *check.C) {
 	tmpDir := c.MkDir()
 
 	//untagged
-	assertSkopeoFails(c, ".*invalid status code from registry 404.*",
+	assertSkopeoFails(c, ".*repository name not known to registry.*",
 		"sync", "--scoped", "--src-tls-verify=false", "--src", "docker", "--dest", "dir", repo, tmpDir)
 
 	//tagged
