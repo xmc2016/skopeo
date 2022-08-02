@@ -16,6 +16,7 @@ import (
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
+	"golang.org/x/exp/maps"
 )
 
 // tagListOutput is the output format of (skopeo list-tags), primarily so that we can format it with a simple json.MarshalIndent.
@@ -37,10 +38,7 @@ var transportHandlers = map[string]func(ctx context.Context, sys *types.SystemCo
 
 // supportedTransports returns all the supported transports
 func supportedTransports(joinStr string) string {
-	res := make([]string, 0, len(transportHandlers))
-	for handlerName := range transportHandlers {
-		res = append(res, handlerName)
-	}
+	res := maps.Keys(transportHandlers)
 	sort.Strings(res)
 	return strings.Join(res, joinStr)
 }

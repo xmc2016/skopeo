@@ -26,6 +26,7 @@ import (
 	"github.com/opencontainers/go-digest"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 )
 
@@ -523,26 +524,17 @@ func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 	}()
 
 	// validate source and destination options
-	contains := func(val string, list []string) (_ bool) {
-		for _, l := range list {
-			if l == val {
-				return true
-			}
-		}
-		return
-	}
-
 	if len(opts.source) == 0 {
 		return errors.New("A source transport must be specified")
 	}
-	if !contains(opts.source, []string{docker.Transport.Name(), directory.Transport.Name(), "yaml"}) {
+	if !slices.Contains([]string{docker.Transport.Name(), directory.Transport.Name(), "yaml"}, opts.source) {
 		return fmt.Errorf("%q is not a valid source transport", opts.source)
 	}
 
 	if len(opts.destination) == 0 {
 		return errors.New("A destination transport must be specified")
 	}
-	if !contains(opts.destination, []string{docker.Transport.Name(), directory.Transport.Name()}) {
+	if !slices.Contains([]string{docker.Transport.Name(), directory.Transport.Name()}, opts.destination) {
 		return fmt.Errorf("%q is not a valid destination transport", opts.destination)
 	}
 
