@@ -30,11 +30,11 @@ type errorShouldDisplayUsage struct {
 // The error for closeErr is annotated with description (which is not a format string)
 // Typical usage:
 //
-// defer func() {
-//     if err := something.Close(); err != nil {
-//         returnedErr = noteCloseFailure(returnedErr, "closing something", err)
-//     }
-// }
+//	defer func() {
+//		if err := something.Close(); err != nil {
+//			returnedErr = noteCloseFailure(returnedErr, "closing something", err)
+//		}
+//	}
 func noteCloseFailure(err error, description string, closeErr error) error {
 	// We don’t accept a Closer() and close it ourselves because signature.PolicyContext has .Destroy(), not .Close().
 	// This also makes it harder for a caller to do

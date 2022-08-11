@@ -34,7 +34,7 @@ if [[ "$SKOPEO_CONTAINER_TESTS" == "0" ]] && [[ "$CI" != "true" ]]; then
     echo "         the Makefile targets WITHOUT the '-local' suffix."
     echo "***************************************************************"
     ) > /dev/stderr
-    sleep 5s
+    sleep 5
 fi
 
 echo
