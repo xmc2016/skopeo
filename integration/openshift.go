@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/docker/pkg/homedir"
+	"github.com/containers/storage/pkg/homedir"
 	"gopkg.in/check.v1"
 )
 
