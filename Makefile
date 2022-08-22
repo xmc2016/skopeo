@@ -55,8 +55,6 @@ ifeq ($(GOOS), linux)
   endif
 endif
 
-GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
-
 # If $TESTFLAGS is set, it is passed as extra arguments to 'go test'.
 # You can increase test output verbosity with the option '-test.vv'.
 # You can select certain tests to run, with `-test.run <regex>` for example:
