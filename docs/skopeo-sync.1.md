@@ -1,14 +1,14 @@
 % skopeo-sync(1)
 
 ## NAME
-skopeo\-sync - Synchronize images between container registries and local directories.
+skopeo\-sync - Synchronize images between registry repositories and local directories.
 
 
 ## SYNOPSIS
 **skopeo sync** [*options*] --src _transport_ --dest _transport_ _source_ _destination_
 
 ## DESCRIPTION
-Synchronize images between container registries and local directories.
+Synchronize images between registry repoositories and local directories.
 The synchronization is achieved by copying all the images found at _source_ to _destination_.
 
 Useful to synchronize a local container registry mirror, and to to populate registries running inside of air-gapped environments.
