@@ -56,7 +56,7 @@ After copying the image, write the digest of the resulting image to the file.
 
 **--preserve-digests**
 
-Preserve the digests during copying. Fail if the digest cannot be preserved.
+Preserve the digests during copying. Fail if the digest cannot be preserved. Consider using `--all` at the same time.
 
 **--encrypt-layer** _ints_
 
