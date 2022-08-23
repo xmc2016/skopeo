@@ -207,7 +207,7 @@ Please read the [contribution guide](CONTRIBUTING.md) if you want to collaborate
 | [skopeo-manifest-digest(1)](/docs/skopeo-manifest-digest.1.md)    | Compute a manifest digest for a manifest-file and write it to standard output.   |
 | [skopeo-standalone-sign(1)](/docs/skopeo-standalone-sign.1.md)    | Debugging tool - Publish and sign an image in one step.                                                         |
 | [skopeo-standalone-verify(1)](/docs/skopeo-standalone-verify.1.md)| Verify an image signature.                                                    |
-| [skopeo-sync(1)](/docs/skopeo-sync.1.md)           | Synchronize images between container registries and local directories.                       |
+| [skopeo-sync(1)](/docs/skopeo-sync.1.md)           | Synchronize images between registry repositories and local directories.                      |
 
 License
 -
