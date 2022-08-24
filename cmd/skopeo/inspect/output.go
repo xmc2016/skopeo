@@ -3,6 +3,7 @@ package inspect
 import (
 	"time"
 
+	"github.com/containers/image/v5/types"
 	digest "github.com/opencontainers/go-digest"
 )
 
@@ -19,5 +20,6 @@ type Output struct {
 	Architecture  string
 	Os            string
 	Layers        []string
+	LayersData    []types.ImageInspectLayer
 	Env           []string
 }
