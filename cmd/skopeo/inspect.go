@@ -186,6 +186,7 @@ func (opts *inspectOptions) run(args []string, stdout io.Writer) (retErr error) 
 		Architecture:  imgInspect.Architecture,
 		Os:            imgInspect.Os,
 		Layers:        imgInspect.Layers,
+		LayersData:    imgInspect.LayersData,
 		Env:           imgInspect.Env,
 	}
 	outputData.Digest, err = manifest.Digest(rawManifest)
