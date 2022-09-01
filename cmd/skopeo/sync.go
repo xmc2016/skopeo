@@ -244,7 +244,11 @@ func imagesToCopyFromRepo(sys *types.SystemContext, repoRef reference.Named) ([]
 	for _, tag := range tags {
 		taggedRef, err := reference.WithTag(repoRef, tag)
 		if err != nil {
-			return nil, fmt.Errorf("Error creating a reference for repository %s and tag %q: %w", repoRef.Name(), tag, err)
+			logrus.WithFields(logrus.Fields{
+				"repo": repoRef.Name(),
+				"tag":  tag,
+			}).Errorf("Error creating a tagged reference from registry tag list: %v", err)
+			continue
 		}
 		ref, err := docker.NewReference(taggedRef)
 		if err != nil {
