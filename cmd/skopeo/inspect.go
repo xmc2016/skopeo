@@ -203,12 +203,11 @@ func (opts *inspectOptions) run(args []string, stdout io.Writer) (retErr error) 
 		}
 		outputData.RepoTags, err = docker.GetRepositoryTags(ctx, sys, img.Reference())
 		if err != nil {
-			// some registries may decide to block the "list all tags" endpoint
-			// gracefully allow the inspect to continue in this case. Currently
-			// the IBM Bluemix container registry has this restriction.
-			// In addition, AWS ECR rejects it with 403 (Forbidden) if the "ecr:ListImages"
-			// action is not allowed.
-			if !strings.Contains(err.Error(), "401") && !strings.Contains(err.Error(), "403") {
+			// Some registries may decide to block the "list all tags" endpoint;
+			// gracefully allow the inspect to continue in this case:
+			// - AWS ECR rejects it with 403 (Forbidden) if the "ecr:ListImages"
+			//   action is not allowed.
+			if !strings.Contains(err.Error(), "403") {
 				return fmt.Errorf("Error determining repository tags: %w", err)
 			}
 			logrus.Warnf("Registry disallows tag list retrieval; skipping")
