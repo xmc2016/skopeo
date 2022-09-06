@@ -216,7 +216,7 @@ func getImageTags(ctx context.Context, sysCtx *types.SystemContext, repoRef refe
 	}
 	tags, err := docker.GetRepositoryTags(ctx, sysCtx, dockerRef)
 	if err != nil {
-		return nil, fmt.Errorf("Error determining repository tags for image %s: %w", name, err)
+		return nil, fmt.Errorf("Error determining repository tags for repo %s: %w", name, err)
 	}
 
 	return tags, nil
