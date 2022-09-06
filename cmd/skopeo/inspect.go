@@ -18,6 +18,7 @@ import (
 	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/types"
 	"github.com/containers/skopeo/cmd/skopeo/inspect"
+	"github.com/docker/distribution/registry/api/errcode"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -206,9 +207,10 @@ func (opts *inspectOptions) run(args []string, stdout io.Writer) (retErr error) 
 			// Some registries may decide to block the "list all tags" endpoint;
 			// gracefully allow the inspect to continue in this case:
 			fatalFailure := true
-			// - AWS ECR rejects it with 403 (Forbidden) if the "ecr:ListImages"
-			//   action is not allowed.
-			if strings.Contains(err.Error(), "403") {
+			// - AWS ECR rejects it if the "ecr:ListImages" action is not allowed.
+			//   https://github.com/containers/skopeo/issues/726
+			var ec errcode.ErrorCoder
+			if ok := errors.As(err, &ec); ok && ec.ErrorCode() == errcode.ErrorCodeDenied {
 				fatalFailure = false
 			}
 			if fatalFailure {

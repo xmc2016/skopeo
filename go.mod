@@ -7,6 +7,7 @@ require (
 	github.com/containers/image/v5 v5.23.1-0.20221012204947-6ea53742be58
 	github.com/containers/ocicrypt v1.1.6
 	github.com/containers/storage v1.43.0
+	github.com/docker/distribution v2.8.1+incompatible
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
 	github.com/opencontainers/image-tools v1.0.0-rc3
@@ -31,7 +32,6 @@ require (
 	github.com/containers/libtrust v0.0.0-20200511145503-9c3a6c22cd9a // indirect
 	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/docker/docker v20.10.18+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
