@@ -213,6 +213,16 @@ func (opts *inspectOptions) run(args []string, stdout io.Writer) (retErr error) 
 			if ok := errors.As(err, &ec); ok && ec.ErrorCode() == errcode.ErrorCodeDenied {
 				fatalFailure = false
 			}
+			// - public.ecr.aws does not implement the endpoint at all, and fails with 404:
+			//   https://github.com/containers/skopeo/issues/1230
+			//   This is actually "code":"NOT_FOUND", and the parser doesn’t preserve that.
+			//   So, also check the error text.
+			if ok := errors.As(err, &ec); ok && ec.ErrorCode() == errcode.ErrorCodeUnknown {
+				var e errcode.Error
+				if ok := errors.As(err, &e); ok && e.Code == errcode.ErrorCodeUnknown && e.Message == "404 page not found" {
+					fatalFailure = false
+				}
+			}
 			if fatalFailure {
 				return fmt.Errorf("Error determining repository tags: %w", err)
 			}
