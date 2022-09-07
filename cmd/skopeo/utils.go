@@ -10,6 +10,7 @@ import (
 
 	commonFlag "github.com/containers/common/pkg/flag"
 	"github.com/containers/common/pkg/retry"
+	"github.com/containers/image/v5/directory"
 	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/pkg/compression"
 	"github.com/containers/image/v5/transports/alltransports"
@@ -252,12 +253,13 @@ type imageDestOptions struct {
 	compressionFormat           string                 // Format to use for the compression
 	compressionLevel            commonFlag.OptionalInt // Level to use for the compression
 	precomputeDigests           bool                   // Precompute digests to dedup layers when saving to the docker: transport
+	imageDestFlagPrefix         string
 }
 
 // imageDestFlags prepares a collection of CLI flags writing into imageDestOptions, and the managed imageDestOptions structure.
 func imageDestFlags(global *globalOptions, shared *sharedImageOptions, deprecatedTLSVerify *deprecatedTLSVerifyOption, flagPrefix, credsOptionAlias string) (pflag.FlagSet, *imageDestOptions) {
 	genericFlags, genericOptions := imageFlags(global, shared, deprecatedTLSVerify, flagPrefix, credsOptionAlias)
-	opts := imageDestOptions{imageOptions: genericOptions}
+	opts := imageDestOptions{imageOptions: genericOptions, imageDestFlagPrefix: flagPrefix}
 	fs := pflag.FlagSet{}
 	fs.AddFlagSet(&genericFlags)
 	fs.BoolVar(&opts.dirForceCompression, flagPrefix+"compress", false, "Compress tarball image layers when saving to directory using the 'dir' transport. (default is same compression type as source)")
@@ -293,6 +295,17 @@ func (opts *imageDestOptions) newSystemContext() (*types.SystemContext, error) {
 	}
 	ctx.DockerRegistryPushPrecomputeDigests = opts.precomputeDigests
 	return ctx, err
+}
+
+func (opts *imageDestOptions) warnAboutIneffectiveOptions(destTransport types.ImageTransport) {
+	if destTransport.Name() != directory.Transport.Name() {
+		if opts.dirForceCompression {
+			logrus.Warnf("--%s can only be used if the destination transport is 'dir'", opts.imageDestFlagPrefix+"compress")
+		}
+		if opts.dirForceDecompression {
+			logrus.Warnf("--%s can only be used if the destination transport is 'dir'", opts.imageDestFlagPrefix+"decompress")
+		}
+	}
 }
 
 func parseCreds(creds string) (string, string, error) {
