@@ -245,6 +245,7 @@ func (opts *imageOptions) newSystemContext() (*types.SystemContext, error) {
 }
 
 // imageDestOptions is a superset of imageOptions specialized for image destinations.
+// Every user should call imageDestOptions.warnAboutIneffectiveOptions() as part of handling the CLI
 type imageDestOptions struct {
 	*imageOptions
 	dirForceCompression         bool                   // Compress layers when saving to the dir: transport
@@ -297,6 +298,8 @@ func (opts *imageDestOptions) newSystemContext() (*types.SystemContext, error) {
 	return ctx, err
 }
 
+// warnAboutIneffectiveOptions warns if any ineffective option was set by the user
+// Every user should call this as part of handling the CLI
 func (opts *imageDestOptions) warnAboutIneffectiveOptions(destTransport types.ImageTransport) {
 	if destTransport.Name() != directory.Transport.Name() {
 		if opts.dirForceCompression {
