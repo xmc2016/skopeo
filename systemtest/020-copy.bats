@@ -50,7 +50,7 @@ function setup() {
 
     local dir=$TESTDIR/dir
 
-    run_skopeo copy --dest-compress --dest-compress-format=zstd $remote_image oci:$dir:latest
+    run_skopeo copy --dest-compress-format=zstd $remote_image oci:$dir:latest
 
     # zstd magic number
     local magic=$(printf "\x28\xb5\x2f\xfd")

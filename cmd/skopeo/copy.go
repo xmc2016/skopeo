@@ -17,6 +17,7 @@ import (
 	"github.com/containers/image/v5/transports/alltransports"
 	encconfig "github.com/containers/ocicrypt/config"
 	enchelpers "github.com/containers/ocicrypt/helpers"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -257,6 +258,15 @@ func (opts *copyOptions) run(args []string, stdout io.Writer) (retErr error) {
 		signIdentity, err = reference.ParseNamed(opts.signIdentity)
 		if err != nil {
 			return fmt.Errorf("Could not parse --sign-identity: %v", err)
+		}
+	}
+
+	if destRef.Transport().Name() != "dir" {
+		if opts.destImage.dirForceCompression {
+			logrus.Warn("--dest-compress can only be used if the destination transport is 'dir'")
+		}
+		if opts.destImage.dirForceDecompression {
+			logrus.Warn("--dest-decompress can only be used if the destination transport is 'dir'")
 		}
 	}
 
