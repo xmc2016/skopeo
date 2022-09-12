@@ -552,6 +552,8 @@ func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 		return errors.New("sync from 'dir' to 'dir' not implemented, consider using rsync instead")
 	}
 
+	opts.destImage.warnAboutIneffectiveOptions(transports.Get(opts.destination))
+
 	imageListSelection := copy.CopySystemImage
 	if opts.all {
 		imageListSelection = copy.CopyAllImages

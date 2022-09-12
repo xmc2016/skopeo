@@ -260,6 +260,8 @@ func (opts *copyOptions) run(args []string, stdout io.Writer) (retErr error) {
 		}
 	}
 
+	opts.destImage.warnAboutIneffectiveOptions(destRef.Transport())
+
 	return retry.IfNecessary(ctx, func() error {
 		manifestBytes, err := copy.Image(ctx, policyContext, destRef, srcRef, &copy.Options{
 			RemoveSignatures:                 opts.removeSignatures,
