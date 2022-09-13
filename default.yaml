@@ -13,7 +13,7 @@
 # This is the default signature write location for docker registries.
 default-docker:
 #  lookaside: file:///var/lib/containers/sigstore
-  lookaside-staging: file:///var/lib/containers/sigstore
+#  lookaside-staging: file:///var/lib/containers/sigstore
 
 # The 'docker' indicator here is the start of the configuration
 # for docker registries.
