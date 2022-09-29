@@ -1,3 +1,16 @@
+[comment]: <> (***ATTENTION*** ***WARNING*** ***ALERT*** ***CAUTION*** ***DANGER***)
+[comment]: <> ()
+[comment]: <> (ANY changes made to this file, once commited/merged must)
+[comment]: <> (be manually copy/pasted -in markdown- into the description)
+[comment]: <> (field on Quay at the following locations:)
+[comment]: <> ()
+[comment]: <> (https://quay.io/repository/containers/skopeo)
+[comment]: <> (https://quay.io/repository/skopeo/stable)
+[comment]: <> (https://quay.io/repository/skopeo/testing)
+[comment]: <> (https://quay.io/repository/skopeo/upstream)
+[comment]: <> ()
+[comment]: <> (***ATTENTION*** ***WARNING*** ***ALERT*** ***CAUTION*** ***DANGER***)
+
 <img src="https://cdn.rawgit.com/containers/skopeo/master/docs/skopeo.svg" width="250">
 
 ----
