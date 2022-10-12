@@ -49,25 +49,25 @@ func (s *SkopeoSuite) TearDownSuite(c *check.C) {
 //func skopeoCmd()
 
 func (s *SkopeoSuite) TestVersion(c *check.C) {
-	wanted := fmt.Sprintf(".*%s version %s.*", skopeoBinary, version.Version)
-	assertSkopeoSucceeds(c, wanted, "--version")
+	assertSkopeoSucceeds(c, fmt.Sprintf(".*%s version %s.*", skopeoBinary, version.Version),
+		"--version")
 }
 
 func (s *SkopeoSuite) TestCanAuthToPrivateRegistryV2WithoutDockerCfg(c *check.C) {
-	wanted := ".*manifest unknown: manifest unknown.*"
-	assertSkopeoFails(c, wanted, "--tls-verify=false", "inspect", "--creds="+s.regV2WithAuth.username+":"+s.regV2WithAuth.password, fmt.Sprintf("docker://%s/busybox:latest", s.regV2WithAuth.url))
+	assertSkopeoFails(c, ".*manifest unknown.*",
+		"--tls-verify=false", "inspect", "--creds="+s.regV2WithAuth.username+":"+s.regV2WithAuth.password, fmt.Sprintf("docker://%s/busybox:latest", s.regV2WithAuth.url))
 }
 
 func (s *SkopeoSuite) TestNeedAuthToPrivateRegistryV2WithoutDockerCfg(c *check.C) {
-	wanted := ".*unauthorized: authentication required.*"
-	assertSkopeoFails(c, wanted, "--tls-verify=false", "inspect", fmt.Sprintf("docker://%s/busybox:latest", s.regV2WithAuth.url))
+	assertSkopeoFails(c, ".*authentication required.*",
+		"--tls-verify=false", "inspect", fmt.Sprintf("docker://%s/busybox:latest", s.regV2WithAuth.url))
 }
 
 func (s *SkopeoSuite) TestCertDirInsteadOfCertPath(c *check.C) {
-	wanted := ".*unknown flag: --cert-path.*"
-	assertSkopeoFails(c, wanted, "--tls-verify=false", "inspect", fmt.Sprintf("docker://%s/busybox:latest", s.regV2WithAuth.url), "--cert-path=/")
-	wanted = ".*unauthorized: authentication required.*"
-	assertSkopeoFails(c, wanted, "--tls-verify=false", "inspect", fmt.Sprintf("docker://%s/busybox:latest", s.regV2WithAuth.url), "--cert-dir=/etc/docker/certs.d/")
+	assertSkopeoFails(c, ".*unknown flag: --cert-path.*",
+		"--tls-verify=false", "inspect", fmt.Sprintf("docker://%s/busybox:latest", s.regV2WithAuth.url), "--cert-path=/")
+	assertSkopeoFails(c, ".*authentication required.*",
+		"--tls-verify=false", "inspect", fmt.Sprintf("docker://%s/busybox:latest", s.regV2WithAuth.url), "--cert-dir=/etc/docker/certs.d/")
 }
 
 // TODO(runcom): as soon as we can push to registries ensure you can inspect here
@@ -75,10 +75,8 @@ func (s *SkopeoSuite) TestCertDirInsteadOfCertPath(c *check.C) {
 func (s *SkopeoSuite) TestNoNeedAuthToPrivateRegistryV2ImageNotFound(c *check.C) {
 	out, err := exec.Command(skopeoBinary, "--tls-verify=false", "inspect", fmt.Sprintf("docker://%s/busybox:latest", s.regV2.url)).CombinedOutput()
 	c.Assert(err, check.NotNil, check.Commentf(string(out)))
-	wanted := ".*manifest unknown.*"
-	c.Assert(string(out), check.Matches, "(?s)"+wanted) // (?s) : '.' will also match newlines
-	wanted = ".*unauthorized: authentication required.*"
-	c.Assert(string(out), check.Not(check.Matches), "(?s)"+wanted) // (?s) : '.' will also match newlines
+	c.Assert(string(out), check.Matches, "(?s).*manifest unknown.*")                                 // (?s) : '.' will also match newlines
+	c.Assert(string(out), check.Not(check.Matches), "(?s).*unauthorized: authentication required.*") // (?s) : '.' will also match newlines
 }
 
 func (s *SkopeoSuite) TestInspectFailsWhenReferenceIsInvalid(c *check.C) {
@@ -86,28 +84,28 @@ func (s *SkopeoSuite) TestInspectFailsWhenReferenceIsInvalid(c *check.C) {
 }
 
 func (s *SkopeoSuite) TestLoginLogout(c *check.C) {
-	wanted := "^Login Succeeded!\n$"
-	assertSkopeoSucceeds(c, wanted, "login", "--tls-verify=false", "--username="+s.regV2WithAuth.username, "--password="+s.regV2WithAuth.password, s.regV2WithAuth.url)
+	assertSkopeoSucceeds(c, "^Login Succeeded!\n$",
+		"login", "--tls-verify=false", "--username="+s.regV2WithAuth.username, "--password="+s.regV2WithAuth.password, s.regV2WithAuth.url)
 	// test --get-login returns username
-	wanted = fmt.Sprintf("^%s\n$", s.regV2WithAuth.username)
-	assertSkopeoSucceeds(c, wanted, "login", "--tls-verify=false", "--get-login", s.regV2WithAuth.url)
+	assertSkopeoSucceeds(c, fmt.Sprintf("^%s\n$", s.regV2WithAuth.username),
+		"login", "--tls-verify=false", "--get-login", s.regV2WithAuth.url)
 	// test logout
-	wanted = fmt.Sprintf("^Removed login credentials for %s\n$", s.regV2WithAuth.url)
-	assertSkopeoSucceeds(c, wanted, "logout", s.regV2WithAuth.url)
+	assertSkopeoSucceeds(c, fmt.Sprintf("^Removed login credentials for %s\n$", s.regV2WithAuth.url),
+		"logout", s.regV2WithAuth.url)
 }
 
 func (s *SkopeoSuite) TestCopyWithLocalAuth(c *check.C) {
-	wanted := "^Login Succeeded!\n$"
-	assertSkopeoSucceeds(c, wanted, "login", "--tls-verify=false", "--username="+s.regV2WithAuth.username, "--password="+s.regV2WithAuth.password, s.regV2WithAuth.url)
+	assertSkopeoSucceeds(c, "^Login Succeeded!\n$",
+		"login", "--tls-verify=false", "--username="+s.regV2WithAuth.username, "--password="+s.regV2WithAuth.password, s.regV2WithAuth.url)
 	// copy to private registry using local authentication
 	imageName := fmt.Sprintf("docker://%s/busybox:mine", s.regV2WithAuth.url)
 	assertSkopeoSucceeds(c, "", "copy", "--dest-tls-verify=false", testFQIN+":latest", imageName)
 	// inspect from private registry
 	assertSkopeoSucceeds(c, "", "inspect", "--tls-verify=false", imageName)
 	// logout from the registry
-	wanted = fmt.Sprintf("^Removed login credentials for %s\n$", s.regV2WithAuth.url)
-	assertSkopeoSucceeds(c, wanted, "logout", s.regV2WithAuth.url)
+	assertSkopeoSucceeds(c, fmt.Sprintf("^Removed login credentials for %s\n$", s.regV2WithAuth.url),
+		"logout", s.regV2WithAuth.url)
 	// inspect from private registry should fail after logout
-	wanted = ".*unauthorized: authentication required.*"
-	assertSkopeoFails(c, wanted, "inspect", "--tls-verify=false", imageName)
+	assertSkopeoFails(c, ".*authentication required.*",
+		"inspect", "--tls-verify=false", imageName)
 }

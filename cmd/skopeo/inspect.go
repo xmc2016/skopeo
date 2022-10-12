@@ -18,6 +18,7 @@ import (
 	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/types"
 	"github.com/containers/skopeo/cmd/skopeo/inspect"
+	"github.com/docker/distribution/registry/api/errcode"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -203,12 +204,26 @@ func (opts *inspectOptions) run(args []string, stdout io.Writer) (retErr error) 
 		}
 		outputData.RepoTags, err = docker.GetRepositoryTags(ctx, sys, img.Reference())
 		if err != nil {
-			// some registries may decide to block the "list all tags" endpoint
-			// gracefully allow the inspect to continue in this case. Currently
-			// the IBM Bluemix container registry has this restriction.
-			// In addition, AWS ECR rejects it with 403 (Forbidden) if the "ecr:ListImages"
-			// action is not allowed.
-			if !strings.Contains(err.Error(), "401") && !strings.Contains(err.Error(), "403") {
+			// Some registries may decide to block the "list all tags" endpoint;
+			// gracefully allow the inspect to continue in this case:
+			fatalFailure := true
+			// - AWS ECR rejects it if the "ecr:ListImages" action is not allowed.
+			//   https://github.com/containers/skopeo/issues/726
+			var ec errcode.ErrorCoder
+			if ok := errors.As(err, &ec); ok && ec.ErrorCode() == errcode.ErrorCodeDenied {
+				fatalFailure = false
+			}
+			// - public.ecr.aws does not implement the endpoint at all, and fails with 404:
+			//   https://github.com/containers/skopeo/issues/1230
+			//   This is actually "code":"NOT_FOUND", and the parser doesn’t preserve that.
+			//   So, also check the error text.
+			if ok := errors.As(err, &ec); ok && ec.ErrorCode() == errcode.ErrorCodeUnknown {
+				var e errcode.Error
+				if ok := errors.As(err, &e); ok && e.Code == errcode.ErrorCodeUnknown && e.Message == "404 page not found" {
+					fatalFailure = false
+				}
+			}
+			if fatalFailure {
 				return fmt.Errorf("Error determining repository tags: %w", err)
 			}
 			logrus.Warnf("Registry disallows tag list retrieval; skipping")

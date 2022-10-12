@@ -1036,7 +1036,8 @@ func (s *CopySuite) TestCopyVerifyingMirroredSignatures(c *check.C) {
 	assertSkopeoSucceeds(c, "", "--policy", policy, "--registries.d", registriesDir, "--registries-conf", "fixtures/registries.conf", "copy", "--src-tls-verify=false", regPrefix+"remap:remapped", dirDest)
 	// To be extra clear about the semantics, verify that the signedPrefix (primary) location never exists
 	// and only the remapped prefix (mirror) is accessed.
-	assertSkopeoFails(c, ".*initializing source docker://localhost:5006/myns/mirroring-primary:remapped:.*manifest unknown: manifest unknown.*", "--policy", policy, "--registries.d", registriesDir, "--registries-conf", "fixtures/registries.conf", "copy", "--src-tls-verify=false", regPrefix+"primary:remapped", dirDest)
+	assertSkopeoFails(c, ".*initializing source docker://localhost:5006/myns/mirroring-primary:remapped:.*manifest unknown.*",
+		"--policy", policy, "--registries.d", registriesDir, "--registries-conf", "fixtures/registries.conf", "copy", "--src-tls-verify=false", regPrefix+"primary:remapped", dirDest)
 }
 
 func (s *SkopeoSuite) TestCopySrcWithAuth(c *check.C) {

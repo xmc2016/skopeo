@@ -534,7 +534,7 @@ func (s *SyncSuite) TestFailsNoSourceImages(c *check.C) {
 	assertSkopeoFails(c, ".*No images to sync found in .*",
 		"sync", "--scoped", "--dest-tls-verify=false", "--src", "dir", "--dest", "docker", tmpDir, v2DockerRegistryURL)
 
-	assertSkopeoFails(c, ".*No images to sync found in .*",
+	assertSkopeoFails(c, ".*Error determining repository tags for repo docker.io/library/hopefully_no_images_will_ever_be_called_like_this: fetching tags list: requested access to the resource is denied.*",
 		"sync", "--scoped", "--dest-tls-verify=false", "--src", "docker", "--dest", "docker", "hopefully_no_images_will_ever_be_called_like_this", v2DockerRegistryURL)
 }
 
@@ -544,11 +544,11 @@ func (s *SyncSuite) TestFailsWithDockerSourceNoRegistry(c *check.C) {
 	tmpDir := c.MkDir()
 
 	//untagged
-	assertSkopeoFails(c, ".*invalid status code from registry 404.*",
+	assertSkopeoFails(c, ".*StatusCode: 404.*",
 		"sync", "--scoped", "--src", "docker", "--dest", "dir", regURL, tmpDir)
 
 	//tagged
-	assertSkopeoFails(c, ".*invalid status code from registry 404.*",
+	assertSkopeoFails(c, ".*StatusCode: 404.*",
 		"sync", "--scoped", "--src", "docker", "--dest", "dir", regURL+":thetag", tmpDir)
 }
 
@@ -557,11 +557,11 @@ func (s *SyncSuite) TestFailsWithDockerSourceUnauthorized(c *check.C) {
 	tmpDir := c.MkDir()
 
 	//untagged
-	assertSkopeoFails(c, ".*Registry disallows tag list retrieval.*",
+	assertSkopeoFails(c, ".*requested access to the resource is denied.*",
 		"sync", "--scoped", "--src", "docker", "--dest", "dir", repo, tmpDir)
 
 	//tagged
-	assertSkopeoFails(c, ".*unauthorized: authentication required.*",
+	assertSkopeoFails(c, ".*requested access to the resource is denied.*",
 		"sync", "--scoped", "--src", "docker", "--dest", "dir", repo+":thetag", tmpDir)
 }
 
@@ -570,7 +570,7 @@ func (s *SyncSuite) TestFailsWithDockerSourceNotExisting(c *check.C) {
 	tmpDir := c.MkDir()
 
 	//untagged
-	assertSkopeoFails(c, ".*invalid status code from registry 404.*",
+	assertSkopeoFails(c, ".*repository name not known to registry.*",
 		"sync", "--scoped", "--src-tls-verify=false", "--src", "docker", "--dest", "dir", repo, tmpDir)
 
 	//tagged

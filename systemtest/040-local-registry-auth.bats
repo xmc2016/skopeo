@@ -24,22 +24,22 @@ function setup() {
 @test "auth: credentials on command line" {
     # No creds
     run_skopeo 1 inspect --tls-verify=false docker://localhost:5000/nonesuch
-    expect_output --substring "unauthorized: authentication required"
+    expect_output --substring "authentication required"
 
     # Wrong user
     run_skopeo 1 inspect --tls-verify=false --creds=baduser:badpassword \
                docker://localhost:5000/nonesuch
-    expect_output --substring "unauthorized: authentication required"
+    expect_output --substring "authentication required"
 
     # Wrong password
     run_skopeo 1 inspect --tls-verify=false --creds=$testuser:badpassword \
                docker://localhost:5000/nonesuch
-    expect_output --substring "unauthorized: authentication required"
+    expect_output --substring "authentication required"
 
     # Correct creds, but no such image
     run_skopeo 1 inspect --tls-verify=false --creds=$testuser:$testpassword \
                docker://localhost:5000/nonesuch
-    expect_output --substring "manifest unknown: manifest unknown"
+    expect_output --substring "manifest unknown"
 
     # These should pass
     run_skopeo copy --dest-tls-verify=false --dcreds=$testuser:$testpassword \
@@ -64,7 +64,7 @@ function setup() {
     podman logout localhost:5000
 
     run_skopeo 1 inspect --tls-verify=false docker://localhost:5000/busybox:mine
-    expect_output --substring "unauthorized: authentication required"
+    expect_output --substring "authentication required"
 }
 
 @test "auth: copy with --src-creds and --dest-creds" {
@@ -94,7 +94,7 @@ function setup() {
 
     # inspect without authfile: should fail
     run_skopeo 1 inspect --tls-verify=false docker://localhost:5000/busybox:mine
-    expect_output --substring "unauthorized: authentication required"
+    expect_output --substring "authentication required"
 
     # inspect with authfile: should work
     run_skopeo inspect --tls-verify=false --authfile $TESTDIR/test.auth docker://localhost:5000/busybox:mine
