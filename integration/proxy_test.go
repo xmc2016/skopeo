@@ -239,7 +239,7 @@ func runTestGetManifestAndConfig(p *proxy, img string) error {
 	if !ok {
 		return fmt.Errorf("OpenImage return value is %T", v)
 	}
-	imgid := uint32(imgidv)
+	imgid := uint64(imgidv)
 	if imgid == 0 {
 		return fmt.Errorf("got zero from expected image")
 	}
@@ -254,7 +254,7 @@ func runTestGetManifestAndConfig(p *proxy, img string) error {
 	if !ok {
 		return fmt.Errorf("OpenImageOptional return value is %T", v)
 	}
-	imgid2 := uint32(imgidv)
+	imgid2 := uint64(imgidv)
 	if imgid2 == 0 {
 		return fmt.Errorf("got zero from expected image")
 	}
@@ -325,7 +325,7 @@ func runTestOpenImageOptionalNotFound(p *proxy, img string) error {
 	if !ok {
 		return fmt.Errorf("OpenImageOptional return value is %T", v)
 	}
-	imgid := uint32(imgidv)
+	imgid := uint64(imgidv)
 	if imgid != 0 {
 		return fmt.Errorf("Unexpected optional image id %v", imgid)
 	}

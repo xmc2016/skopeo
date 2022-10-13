@@ -156,7 +156,7 @@ type activePipe struct {
 // openImage is an opened image reference
 type openImage struct {
 	// id is an opaque integer handle
-	id        uint32
+	id        uint64
 	src       types.ImageSource
 	cachedimg types.Image
 }
@@ -171,9 +171,9 @@ type proxyHandler struct {
 	cache  types.BlobInfoCache
 
 	// imageSerial is a counter for open images
-	imageSerial uint32
+	imageSerial uint64
 	// images holds our opened images
-	images map[uint32]*openImage
+	images map[uint64]*openImage
 	// activePipes maps from "pipeid" to a pipe + goroutine pair
 	activePipes map[uint32]*activePipe
 }
@@ -326,14 +326,6 @@ func (h *proxyHandler) CloseImage(args []any) (replyBuf, error) {
 	return ret, nil
 }
 
-func parseImageID(v any) (uint32, error) {
-	imgidf, ok := v.(float64)
-	if !ok {
-		return 0, fmt.Errorf("expecting integer imageid, not %T", v)
-	}
-	return uint32(imgidf), nil
-}
-
 // parseUint64 validates that a number fits inside a JavaScript safe integer
 func parseUint64(v any) (uint64, error) {
 	f, ok := v.(float64)
@@ -347,7 +339,7 @@ func parseUint64(v any) (uint64, error) {
 }
 
 func (h *proxyHandler) parseImageFromID(v any) (*openImage, error) {
-	imgid, err := parseImageID(v)
+	imgid, err := parseUint64(v)
 	if err != nil {
 		return nil, err
 	}
@@ -847,7 +839,7 @@ func (h *proxyHandler) processRequest(readBytes []byte) (rb replyBuf, terminate 
 func (opts *proxyOptions) run(args []string, stdout io.Writer) error {
 	handler := &proxyHandler{
 		opts:        opts,
-		images:      make(map[uint32]*openImage),
+		images:      make(map[uint64]*openImage),
 		activePipes: make(map[uint32]*activePipe),
 	}
 	defer handler.close()
