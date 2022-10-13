@@ -91,7 +91,8 @@ import (
 // 0.2.1: Initial version
 // 0.2.2: Added support for fetching image configuration as OCI
 // 0.2.3: Added GetFullConfig
-const protocolVersion = "0.2.3"
+// 0.2.4: Added OpenImageOptional
+const protocolVersion = "0.2.4"
 
 // maxMsgSize is the current limit on a packet size.
 // Note that all non-metadata (i.e. payload data) is sent over a pipe.
@@ -739,6 +740,8 @@ func (h *proxyHandler) processRequest(readBytes []byte) (rb replyBuf, terminate 
 		rb, err = h.FinishPipe(req.Args)
 	case "Shutdown":
 		terminate = true
+	// NOTE: If you add a method here, you should very likely be bumping the
+	// const protocolVersion above.
 	default:
 		err = fmt.Errorf("unknown method: %s", req.Method)
 	}
