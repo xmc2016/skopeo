@@ -20,6 +20,9 @@ import (
 // This image is known to be x86_64 only right now
 const knownNotManifestListedImage_x8664 = "docker://quay.io/coreos/11bot"
 
+// knownNotExtantImage would be very surprising if it did exist
+const knownNotExtantImage = "docker://quay.io/centos/centos:opensusewindowsubuntu"
+
 const expectedProxySemverMajor = "0.2"
 
 // request is copied from proxy.go
@@ -240,6 +243,29 @@ func runTestGetManifestAndConfig(p *proxy, img string) error {
 		return fmt.Errorf("OpenImage return value is %T", v)
 	}
 	imgid := uint32(imgidv)
+	if imgid == 0 {
+		return fmt.Errorf("got zero from expected image")
+	}
+
+	// Also verify the optional path
+	v, err = p.callNoFd("OpenImageOptional", []interface{}{knownNotManifestListedImage_x8664})
+	if err != nil {
+		return err
+	}
+
+	imgidv, ok = v.(float64)
+	if !ok {
+		return fmt.Errorf("OpenImageOptional return value is %T", v)
+	}
+	imgid2 := uint32(imgidv)
+	if imgid2 == 0 {
+		return fmt.Errorf("got zero from expected image")
+	}
+
+	_, err = p.callNoFd("CloseImage", []interface{}{imgid2})
+	if err != nil {
+		return err
+	}
 
 	_, manifestBytes, err := p.callReadAllBytes("GetManifest", []interface{}{imgid})
 	if err != nil {
@@ -292,6 +318,23 @@ func runTestGetManifestAndConfig(p *proxy, img string) error {
 	return nil
 }
 
+func runTestOpenImageOptionalNotFound(p *proxy, img string) error {
+	v, err := p.callNoFd("OpenImageOptional", []interface{}{img})
+	if err != nil {
+		return err
+	}
+
+	imgidv, ok := v.(float64)
+	if !ok {
+		return fmt.Errorf("OpenImageOptional return value is %T", v)
+	}
+	imgid := uint32(imgidv)
+	if imgid != 0 {
+		return fmt.Errorf("Unexpected optional image id %v", imgid)
+	}
+	return nil
+}
+
 func (s *ProxySuite) TestProxy(c *check.C) {
 	p, err := newProxy()
 	c.Assert(err, check.IsNil)
@@ -305,6 +348,12 @@ func (s *ProxySuite) TestProxy(c *check.C) {
 	err = runTestGetManifestAndConfig(p, knownListImage)
 	if err != nil {
 		err = fmt.Errorf("Testing image %s: %v", knownListImage, err)
+	}
+	c.Assert(err, check.IsNil)
+
+	err = runTestOpenImageOptionalNotFound(p, knownNotExtantImage)
+	if err != nil {
+		err = fmt.Errorf("Testing optional image %s: %v", knownNotExtantImage, err)
 	}
 	c.Assert(err, check.IsNil)
 }

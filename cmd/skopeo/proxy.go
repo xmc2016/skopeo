@@ -73,9 +73,12 @@ import (
 
 	"github.com/containers/image/v5/image"
 	"github.com/containers/image/v5/manifest"
+	ocilayout "github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/pkg/blobinfocache"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
+	dockerdistributionerrcode "github.com/docker/distribution/registry/api/errcode"
+	dockerdistributionapi "github.com/docker/distribution/registry/api/v2"
 	"github.com/opencontainers/go-digest"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
@@ -99,6 +102,9 @@ const maxMsgSize = 32 * 1024
 // We hard error if the input JSON numbers we expect to be
 // integers are above this.
 const maxJSONFloat = float64(uint64(1)<<53 - 1)
+
+// sentinelImageID represents "image not found" on the wire
+const sentinelImageID = 0
 
 // request is the JSON serialization of a function call
 type request struct {
@@ -197,6 +203,29 @@ func (h *proxyHandler) Initialize(args []interface{}) (replyBuf, error) {
 // OpenImage accepts a string image reference i.e. TRANSPORT:REF - like `skopeo copy`.
 // The return value is an opaque integer handle.
 func (h *proxyHandler) OpenImage(args []interface{}) (replyBuf, error) {
+	return h.openImageImpl(args, false)
+}
+
+// isDockerManifestUnknownError is a copy of code from containers/image,
+// please update there first.
+func isDockerManifestUnknownError(err error) bool {
+	var ec dockerdistributionerrcode.ErrorCoder
+	if !errors.As(err, &ec) {
+		return false
+	}
+	return ec.ErrorCode() == dockerdistributionapi.ErrorCodeManifestUnknown
+}
+
+// isNotFoundImageError heuristically attempts to determine whether an error
+// is saying the remote source couldn't find the image (as opposed to an
+// authentication error, an I/O error etc.)
+// TODO drive this into containers/image properly
+func isNotFoundImageError(err error) bool {
+	return isDockerManifestUnknownError(err) ||
+		errors.Is(err, ocilayout.ImageNotFoundError{})
+}
+
+func (h *proxyHandler) openImageImpl(args []interface{}, allowNotFound bool) (replyBuf, error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 	var ret replyBuf
@@ -218,9 +247,15 @@ func (h *proxyHandler) OpenImage(args []interface{}) (replyBuf, error) {
 	}
 	imgsrc, err := imgRef.NewImageSource(context.Background(), h.sysctx)
 	if err != nil {
+		if allowNotFound && isNotFoundImageError(err) {
+			ret.value = sentinelImageID
+			return ret, nil
+		}
 		return ret, err
 	}
 
+	// Note that we never return zero as an imageid; this code doesn't yet
+	// handle overflow though.
 	h.imageSerial++
 	openimg := &openImage{
 		id:  h.imageSerial,
@@ -230,6 +265,13 @@ func (h *proxyHandler) OpenImage(args []interface{}) (replyBuf, error) {
 	ret.value = openimg.id
 
 	return ret, nil
+}
+
+// OpenImage accepts a string image reference i.e. TRANSPORT:REF - like `skopeo copy`.
+// The return value is an opaque integer handle.  If the image does not exist, zero
+// is returned.
+func (h *proxyHandler) OpenImageOptional(args []interface{}) (replyBuf, error) {
+	return h.openImageImpl(args, true)
 }
 
 func (h *proxyHandler) CloseImage(args []interface{}) (replyBuf, error) {
@@ -277,6 +319,9 @@ func (h *proxyHandler) parseImageFromID(v interface{}) (*openImage, error) {
 	imgid, err := parseImageID(v)
 	if err != nil {
 		return nil, err
+	}
+	if imgid == sentinelImageID {
+		return nil, fmt.Errorf("Invalid imageid value of zero")
 	}
 	imgref, ok := h.images[imgid]
 	if !ok {
@@ -678,6 +723,8 @@ func (h *proxyHandler) processRequest(readBytes []byte) (rb replyBuf, terminate 
 		rb, err = h.Initialize(req.Args)
 	case "OpenImage":
 		rb, err = h.OpenImage(req.Args)
+	case "OpenImageOptional":
+		rb, err = h.OpenImageOptional(req.Args)
 	case "CloseImage":
 		rb, err = h.CloseImage(req.Args)
 	case "GetManifest":
