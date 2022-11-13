@@ -46,6 +46,7 @@ type syncOptions struct {
 	dryRun                   bool                      // Don't actually copy anything, just output what it would have done
 	preserveDigests          bool                      // Preserve digests during sync
 	keepGoing                bool                      // Whether or not to abort the sync if there are any errors during syncing the images
+	appendSuffix             string                    // Suffix to append to destination image tag
 }
 
 // repoDescriptor contains information of a single repository used as a sync source.
@@ -112,6 +113,7 @@ See skopeo-sync(1) for details.
 	flags.StringVarP(&opts.source, "src", "s", "", "SOURCE transport type")
 	flags.StringVarP(&opts.destination, "dest", "d", "", "DESTINATION transport type")
 	flags.BoolVar(&opts.scoped, "scoped", false, "Images at DESTINATION are prefix using the full source image path as scope")
+	flags.StringVar(&opts.appendSuffix, "append-suffix", "", "String to append to DESTINATION tags")
 	flags.BoolVarP(&opts.all, "all", "a", false, "Copy all images if SOURCE-IMAGE is a list")
 	flags.BoolVar(&opts.dryRun, "dry-run", false, "Run without actually copying data")
 	flags.BoolVar(&opts.preserveDigests, "preserve-digests", false, "Preserve digests of images and lists")
@@ -642,7 +644,7 @@ func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 				destSuffix = path.Base(destSuffix)
 			}
 
-			destRef, err := destinationReference(path.Join(destination, destSuffix), opts.destination)
+			destRef, err := destinationReference(path.Join(destination, destSuffix)+opts.appendSuffix, opts.destination)
 			if err != nil {
 				return err
 			}
