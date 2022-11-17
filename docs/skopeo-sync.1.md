@@ -66,7 +66,7 @@ Print usage statement.
 
 **--scoped** Prefix images with the source image path, so that multiple images with the same name can be stored at _destination_.
 
-**--append-suffix** _tag-suffix_ String to append to destination tags
+**--append-suffix** _tag-suffix_ String to append to destination tags.
 
 **--preserve-digests** Preserve the digests during copying. Fail if the digest cannot be preserved. Consider using `--all` at the same time.
 
@@ -186,6 +186,16 @@ Destination registry content:
 ```
 REPO                              TAGS
 registry.local.lan/repo/busybox   1-glibc, 1-musl, 1-ubuntu, ..., latest
+```
+
+### Synchronizing to a container registry with tag suffix
+```
+skopeo sync --src docker --dest docker --append-suffix '-mirror' registry.example.com/busybox my-registry.local.lan
+```
+Destination registry content:
+```
+REPO                         TAGS
+registry.local.lan/busybox   1-glibc-mirror, 1-musl-mirror, 1-ubuntu-mirror, ..., latest-mirror
 ```
 
 ### YAML file content (used _source_ for `**--src yaml**`)
