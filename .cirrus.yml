@@ -82,7 +82,7 @@ osx_task:
     depends_on:
         - validate
     macos_instance:
-        image: catalina-xcode
+        image: ghcr.io/cirruslabs/macos-ventura-base:latest
     setup_script: |
         export PATH=$GOPATH/bin:$PATH
         brew update
