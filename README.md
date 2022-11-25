@@ -56,29 +56,37 @@ Examples:
 $ skopeo inspect docker://registry.fedoraproject.org/fedora:latest
 {
     "Name": "registry.fedoraproject.org/fedora",
-    "Digest": "sha256:655721ff613ee766a4126cb5e0d5ae81598e1b0c3bcf7017c36c4d72cb092fe9",
+    "Digest": "sha256:0f65bee641e821f8118acafb44c2f8fe30c2fc6b9a2b3729c0660376391aa117",
     "RepoTags": [
-        "24",
-        "25",
-        "26-modular",
-	...
+        "34-aarch64",
+        "34",
+        "latest",
+        ...
     ],
-    "Created": "2020-04-29T06:48:16Z",
+    "Created": "2022-11-24T13:54:18Z",
     "DockerVersion": "1.10.1",
     "Labels": {
         "license": "MIT",
         "name": "fedora",
         "vendor": "Fedora Project",
-        "version": "32"
+        "version": "37"
     },
     "Architecture": "amd64",
     "Os": "linux",
     "Layers": [
-        "sha256:3088721d7dbf674fc0be64cd3cf00c25aab921cacf35fa0e7b1578500a3e1653"
+        "sha256:2a0fc6bf62e155737f0ace6142ee686f3c471c1aab4241dc3128904db46288f0"
+    ],
+    "LayersData": [
+        {
+            "MIMEType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+            "Digest": "sha256:2a0fc6bf62e155737f0ace6142ee686f3c471c1aab4241dc3128904db46288f0",
+            "Size": 71355009,
+            "Annotations": null
+        }
     ],
     "Env": [
-        "DISTTAG=f32container",
-        "FGC=f32",
+        "DISTTAG=f37container",
+        "FGC=f37",
         "container=oci"
     ]
 }
