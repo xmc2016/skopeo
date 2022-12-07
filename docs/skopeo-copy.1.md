@@ -228,6 +228,11 @@ $ ls /var/lib/images/busybox/*
   /tmp/busybox/8ddc19f16526912237dd8af81971d5e4dd0587907234be2b83e249518d5b673f.tar
 ```
 
+To create an archive consumable by `docker load` (but note that using a registry is almost always more efficient):
+```sh
+$ skopeo copy docker://busybox:latest docker-archive:archive-file.tar:busybox:latest
+```
+
 To copy and sign an image:
 
 ```sh
