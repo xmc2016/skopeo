@@ -599,10 +599,12 @@ func (h *proxyHandler) GetBlob(args []interface{}) (replyBuf, error) {
 
 	piper, f, err := h.allocPipe()
 	if err != nil {
+		blobr.Close()
 		return ret, err
 	}
 	go func() {
 		// Signal completion when we return
+		defer blobr.Close()
 		defer f.wg.Done()
 		verifier := d.Verifier()
 		tr := io.TeeReader(blobr, verifier)
