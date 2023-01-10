@@ -55,9 +55,6 @@ _run_setup() {
     # VM's come with the distro. skopeo package pre-installed
     dnf erase -y skopeo
 
-    # Required for testing the SIF transport
-    dnf install -y fakeroot squashfs-tools
-
     msg "Removing systemd-resolved from nsswitch.conf"
     # /etc/resolv.conf is already set to bypass systemd-resolvd
     sed -i -r -e 's/^(hosts.+)resolve.+dns/\1dns/' /etc/nsswitch.conf
