@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 	"text/tabwriter"
 	"text/template"
@@ -161,7 +160,7 @@ func (opts *inspectOptions) run(args []string, stdout io.Writer) (retErr error) 
 		} else {
 			row := "{{range . }}" + report.NormalizeFormat(opts.format) + "{{end}}"
 			data = append(data, config)
-			err = printTmpl(row, data)
+			err = printTmpl(stdout, row, data)
 		}
 		if err != nil {
 			return fmt.Errorf("Error writing OCI-formatted configuration data to standard output: %w", err)
@@ -238,14 +237,14 @@ func (opts *inspectOptions) run(args []string, stdout io.Writer) (retErr error) 
 	}
 	row := "{{range . }}" + report.NormalizeFormat(opts.format) + "{{end}}"
 	data = append(data, outputData)
-	return printTmpl(row, data)
+	return printTmpl(stdout, row, data)
 }
 
-func printTmpl(row string, data []interface{}) error {
+func printTmpl(stdout io.Writer, row string, data []interface{}) error {
 	t, err := template.New("skopeo inspect").Parse(row)
 	if err != nil {
 		return err
 	}
-	w := tabwriter.NewWriter(os.Stdout, 8, 2, 2, ' ', 0)
+	w := tabwriter.NewWriter(stdout, 8, 2, 2, ' ', 0)
 	return t.Execute(w, data)
 }

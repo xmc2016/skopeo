@@ -610,7 +610,7 @@ func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 		SignPassphrase:                        passphrase,
 		SignBySigstorePrivateKeyFile:          opts.signBySigstorePrivateKey,
 		SignSigstorePrivateKeyPassphrase:      []byte(passphrase),
-		ReportWriter:                          os.Stdout,
+		ReportWriter:                          stdout,
 		DestinationCtx:                        destinationCtx,
 		ImageListSelection:                    imageListSelection,
 		PreserveDigests:                       opts.preserveDigests,
