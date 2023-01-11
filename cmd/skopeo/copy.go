@@ -13,6 +13,8 @@ import (
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/pkg/cli"
+	"github.com/containers/image/v5/pkg/cli/sigstore"
+	"github.com/containers/image/v5/signature/signer"
 	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/transports/alltransports"
 	encconfig "github.com/containers/ocicrypt/config"
@@ -29,6 +31,7 @@ type copyOptions struct {
 	additionalTags           []string                  // For docker-archive: destinations, in addition to the name:tag specified as destination, also add these
 	removeSignatures         bool                      // Do not copy signatures from the source image
 	signByFingerprint        string                    // Sign the image using a GPG key with the specified fingerprint
+	signBySigstoreParamFile  string                    // Sign the image using a sigstore signature per configuration in a param file
 	signBySigstorePrivateKey string                    // Sign the image using a sigstore private key
 	signPassphraseFile       string                    // Path pointing to a passphrase file when signing (for either signature format, but only one of them)
 	signIdentity             string                    // Identity of the signed image, must be a fully specified docker reference
@@ -83,6 +86,7 @@ See skopeo(1) section "IMAGE NAMES" for the expected format
 	flags.BoolVar(&opts.preserveDigests, "preserve-digests", false, "Preserve digests of images and lists")
 	flags.BoolVar(&opts.removeSignatures, "remove-signatures", false, "Do not copy signatures from SOURCE-IMAGE")
 	flags.StringVar(&opts.signByFingerprint, "sign-by", "", "Sign the image using a GPG key with the specified `FINGERPRINT`")
+	flags.StringVar(&opts.signBySigstoreParamFile, "sign-by-sigstore", "", "Sign the image using a sigstore parameter file at `PATH`")
 	flags.StringVar(&opts.signBySigstorePrivateKey, "sign-by-sigstore-private-key", "", "Sign the image using a sigstore private key at `PATH`")
 	flags.StringVar(&opts.signPassphraseFile, "sign-passphrase-file", "", "Read a passphrase for signing an image from `PATH`")
 	flags.StringVar(&opts.signIdentity, "sign-identity", "", "Identity of signed image, must be a fully specified docker reference. Defaults to the target docker reference.")
@@ -252,6 +256,22 @@ func (opts *copyOptions) run(args []string, stdout io.Writer) (retErr error) {
 		passphrase = p
 	} // opts.signByFingerprint triggers a GPG-agent passphrase prompt, possibly using a more secure channel, so we usually shouldn’t prompt ourselves if no passphrase was explicitly provided.
 
+	var signers []*signer.Signer
+	if opts.signBySigstoreParamFile != "" {
+		signer, err := sigstore.NewSignerFromParameterFile(opts.signBySigstoreParamFile, &sigstore.Options{
+			PrivateKeyPassphrasePrompt: func(keyFile string) (string, error) {
+				return promptForPassphrase(keyFile, os.Stdin, os.Stdout)
+			},
+			Stdin:  os.Stdin,
+			Stdout: stdout,
+		})
+		if err != nil {
+			return fmt.Errorf("Error using --sign-by-sigstore: %w", err)
+		}
+		defer signer.Close()
+		signers = append(signers, signer)
+	}
+
 	var signIdentity reference.Named = nil
 	if opts.signIdentity != "" {
 		signIdentity, err = reference.ParseNamed(opts.signIdentity)
@@ -265,6 +285,7 @@ func (opts *copyOptions) run(args []string, stdout io.Writer) (retErr error) {
 	return retry.IfNecessary(ctx, func() error {
 		manifestBytes, err := copy.Image(ctx, policyContext, destRef, srcRef, &copy.Options{
 			RemoveSignatures:                 opts.removeSignatures,
+			Signers:                          signers,
 			SignBy:                           opts.signByFingerprint,
 			SignPassphrase:                   passphrase,
 			SignBySigstorePrivateKeyFile:     opts.signBySigstorePrivateKey,
