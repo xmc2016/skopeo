@@ -75,8 +75,12 @@ doccheck_task:
       "${SKOPEO_PATH}/${SCRIPT_BASE}/runner.sh" doccheck
 
 osx_task:
-    # Run for regular PRs and those with [CI:BUILD] but not [CI:DOCS]
-    only_if: &not_docs_multiarch >-
+    # Don't run for docs-only or multi-arch image builds.
+    # Also don't run on release-branches or their PRs,
+    # since base container-image is not version-constrained.
+    only_if: &not_docs_or_release_branch >-
+        ($CIRRUS_BASE_BRANCH == $CIRRUS_DEFAULT_BRANCH ||
+         $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH ) &&
         $CIRRUS_CHANGE_TITLE !=~ '.*CI:DOCS.*' &&
         $CIRRUS_CRON != 'multiarch'
     depends_on:
@@ -99,7 +103,9 @@ osx_task:
 
 cross_task:
     alias: cross
-    only_if: *not_docs_multiarch
+    only_if: >-
+        $CIRRUS_CHANGE_TITLE !=~ '.*CI:DOCS.*' &&
+        $CIRRUS_CRON != 'multiarch'
     depends_on:
         - validate
     gce_instance: &standardvm
@@ -121,14 +127,7 @@ cross_task:
 
 ostree-rs-ext_task:
     alias: proxy_ostree_ext
-    # Don't run for docs-only or multi-arch image builds.
-    # Also don't run on release-branches or their PRs,
-    # since base container-image is not version-constrained.
-    only_if: &not_docs_or_release_branch >-
-        ($CIRRUS_BASE_BRANCH == $CIRRUS_DEFAULT_BRANCH ||
-         $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH ) &&
-        $CIRRUS_CHANGE_TITLE !=~ '.*CI:DOCS.*' &&
-        $CIRRUS_CRON != 'multiarch'
+    only_if: *not_docs_or_release_branch
     # WARNING: This task potentially performs a container image
     # build (on change) with runtime package installs.  Therefore,
     # its behavior can be unpredictable and potentially flake-prone.
