@@ -19,6 +19,8 @@ import (
 	"github.com/containers/image/v5/docker"
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/containers/image/v5/pkg/cli"
+	"github.com/containers/image/v5/pkg/cli/sigstore"
+	"github.com/containers/image/v5/signature/signer"
 	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/types"
 	"github.com/opencontainers/go-digest"
@@ -36,6 +38,7 @@ type syncOptions struct {
 	retryOpts                *retry.Options
 	removeSignatures         bool                      // Do not copy signatures from the source image
 	signByFingerprint        string                    // Sign the image using a GPG key with the specified fingerprint
+	signBySigstoreParamFile  string                    // Sign the image using a sigstore signature per configuration in a param file
 	signBySigstorePrivateKey string                    // Sign the image using a sigstore private key
 	signPassphraseFile       string                    // Path pointing to a passphrase file when signing
 	format                   commonFlag.OptionalString // Force conversion of the image to a specified format
@@ -107,6 +110,7 @@ See skopeo-sync(1) for details.
 	flags := cmd.Flags()
 	flags.BoolVar(&opts.removeSignatures, "remove-signatures", false, "Do not copy signatures from SOURCE images")
 	flags.StringVar(&opts.signByFingerprint, "sign-by", "", "Sign the image using a GPG key with the specified `FINGERPRINT`")
+	flags.StringVar(&opts.signBySigstoreParamFile, "sign-by-sigstore", "", "Sign the image using a sigstore parameter file at `PATH`")
 	flags.StringVar(&opts.signBySigstorePrivateKey, "sign-by-sigstore-private-key", "", "Sign the image using a sigstore private key at `PATH`")
 	flags.StringVar(&opts.signPassphraseFile, "sign-passphrase-file", "", "File that contains a passphrase for the --sign-by key")
 	flags.VarP(commonFlag.NewOptionalStringValue(&opts.format), "format", "f", `MANIFEST TYPE (oci, v2s1, or v2s2) to use when syncing image(s) to a destination (default is manifest type of source, with fallbacks)`)
@@ -604,8 +608,26 @@ func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 		}
 		passphrase = p
 	}
+
+	var signers []*signer.Signer
+	if opts.signBySigstoreParamFile != "" {
+		signer, err := sigstore.NewSignerFromParameterFile(opts.signBySigstoreParamFile, &sigstore.Options{
+			PrivateKeyPassphrasePrompt: func(keyFile string) (string, error) {
+				return promptForPassphrase(keyFile, os.Stdin, os.Stdout)
+			},
+			Stdin:  os.Stdin,
+			Stdout: stdout,
+		})
+		if err != nil {
+			return fmt.Errorf("Error using --sign-by-sigstore: %w", err)
+		}
+		defer signer.Close()
+		signers = append(signers, signer)
+	}
+
 	options := copy.Options{
 		RemoveSignatures:                      opts.removeSignatures,
+		Signers:                               signers,
 		SignBy:                                opts.signByFingerprint,
 		SignPassphrase:                        passphrase,
 		SignBySigstorePrivateKeyFile:          opts.signBySigstorePrivateKey,

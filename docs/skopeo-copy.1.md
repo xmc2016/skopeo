@@ -93,6 +93,11 @@ Do not copy signatures, if any, from _source-image_. Necessary when copying a si
 
 Add a “simple signing” signature using that key ID for an image name corresponding to _destination-image_
 
+**--sign-by-sigstore** _param-file_
+
+Add a sigstore signature based on the options in the specified containers sigstore signing parameter file, _param-file_.
+See containers-sigstore-signing-params.yaml(5) for details about the file format.
+
 **--sign-by-sigstore-private-key** _path_
 
 Add a sigstore signature using a private key at _path_ for an image name corresponding to _destination-image_
