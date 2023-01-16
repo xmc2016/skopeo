@@ -112,18 +112,32 @@ _run_unit() {
     make test-unit-local BUILDTAGS="$BUILDTAGS"
 }
 
-_run_integration() {
+_podman_reset() {
     # Ensure we start with a clean-slate
-    podman system reset --force
+    showrun podman system reset --force
+    # Don't pollute the CI environment
+    (
+      source $CIRRUS_WORKING_DIR/systemtest/helpers.bash
+      # WARNING WARNING WARNING WARNING
+      # Without running a container, the system tests will inexplicably
+      # fail with obscure errors/warning messages.  I have no idea why
+      # running a container after a `system reset` fixes/prevents the
+      # problem.  The failures do not reproduce when tests are run manually.
+      # So unless or until /until somebody develops a better understanding,
+      # this fix is JFM.
+      # WARNING WARNING WARNING WARNING
+      showrun podman run -it --rm --entrypoint /bin/true $REGISTRY_FQIN
+    )
+}
 
+_run_integration() {
+    _podman_reset
     make test-integration-local BUILDTAGS="$BUILDTAGS"
 }
 
 _run_system() {
-    # Ensure we start with a clean-slate
-    podman system reset --force
-
-    # Executes with containers required for testing.
+    _podman_reset
+    ##### Note: Test MODIFIES THE HOST SETUP #####
     make test-system-local BUILDTAGS="$BUILDTAGS"
 }
 
