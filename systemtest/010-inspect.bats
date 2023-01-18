@@ -95,10 +95,11 @@ END_EXPECT
     # is created by the make-noarch-manifest script in this directory.
     img=docker://quay.io/libpod/notmyarch:20210121
 
-    # Get our host arch (what we're running on). This assumes that skopeo
-    # arch matches podman; it also assumes running podman >= April 2020
-    # (prior to that, the format keys were lower-case).
-    arch=$(podman info --format '{{.Host.Arch}}')
+    # Get our host golang arch (what we're running on, according to golang).
+    # This assumes that skopeo arch matches host arch (which it always should).
+    # Buildah is used here because it depends less on the exact system config
+    # than podman - and all we're really after is the golang-flavored arch name.
+    arch=$(go env GOARCH)
 
     # By default, 'inspect' tries to match our host os+arch. This should fail.
     run_skopeo 1 inspect $img
