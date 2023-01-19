@@ -115,19 +115,15 @@ _run_unit() {
 _podman_reset() {
     # Ensure we start with a clean-slate
     showrun podman system reset --force
-    # Don't pollute the CI environment
-    (
-      source $CIRRUS_WORKING_DIR/systemtest/helpers.bash
-      # WARNING WARNING WARNING WARNING
-      # Without running a container, the system tests will inexplicably
-      # fail with obscure errors/warning messages.  I have no idea why
-      # running a container after a `system reset` fixes/prevents the
-      # problem.  The failures do not reproduce when tests are run manually.
-      # So unless or until /until somebody develops a better understanding,
-      # this fix is JFM.
-      # WARNING WARNING WARNING WARNING
-      showrun podman run -it --rm --entrypoint /bin/true $REGISTRY_FQIN
-    )
+    # WARNING WARNING WARNING WARNING
+    # Without running a container, the system tests will inexplicably
+    # fail with obscure errors/warning messages.  I have no idea why
+    # running a container after a `system reset` fixes/prevents the
+    # problem.  The failures do not reproduce when tests are run manually.
+    # So unless or until /until somebody develops a better understanding,
+    # this fix is JFM - just fakking magic.
+    # WARNING WARNING WARNING WARNING
+    showrun podman run -it --rm --entrypoint /bin/true quay.io/libpod/alpine:latest
 }
 
 _run_integration() {
