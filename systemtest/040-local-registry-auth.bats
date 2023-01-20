@@ -8,17 +8,19 @@ load helpers
 function setup() {
     standard_setup
 
-    # Remove old/stale cred file
-    _cred_dir=$TESTDIR/credentials
-    export XDG_RUNTIME_DIR=$_cred_dir
-    mkdir -p $_cred_dir/containers
-    rm -f $_cred_dir/containers/auth.json
-
     # Start authenticated registry with random password
     testuser=testuser
     testpassword=$(random_string 15)
 
     start_registry --testuser=$testuser --testpassword=$testpassword --enable-delete=true reg
+
+    _cred_dir=$TESTDIR/credentials
+    # It is important to change XDG_RUNTIME_DIR only after we start the registry, otherwise it affects the path of $XDG_RUNTIME_DIR/netns maintained by Podman,
+    # making it imposible to clean up after ourselves.
+    export XDG_RUNTIME_DIR=$_cred_dir
+    mkdir -p $_cred_dir/containers
+    # Remove old/stale cred file
+    rm -f $_cred_dir/containers/auth.json
 }
 
 @test "auth: credentials on command line" {
