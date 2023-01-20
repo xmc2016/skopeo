@@ -197,7 +197,11 @@ shell:
 check: validate test-unit test-integration test-system
 
 test-integration:
-	$(CONTAINER_RUN) $(MAKE) test-integration-local
+# This is intended to be equal to $(CONTAINER_RUN), but with --cap-add=cap_mknod.
+# --cap-add=cap_mknod is important to allow skopeo to use containers-storage: directly as it exists in the callers’ environment, without
+# creating a nested user namespace (which requires /etc/subuid and /etc/subgid to be set up)
+	$(CONTAINER_CMD) --security-opt label=disable --cap-add=cap_mknod -v $(CURDIR):$(CONTAINER_GOSRC) -w $(CONTAINER_GOSRC) $(SKOPEO_CIDEV_CONTAINER_FQIN) \
+		$(MAKE) test-integration-local
 
 
 # Intended for CI, assumed to be running in quay.io/libpod/skopeo_cidev container.
