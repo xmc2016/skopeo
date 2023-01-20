@@ -205,7 +205,6 @@ test-integration-local: bin/skopeo
 	hack/make.sh test-integration
 
 # complicated set of options needed to run podman-in-podman
-# TODO: The $(RM) command will likely fail w/o `podman unshare`
 test-system:
 	DTEMP=$(shell mktemp -d --tmpdir=/var/tmp podman-tmp.XXXXXX); \
 	$(CONTAINER_CMD) --privileged \
@@ -214,7 +213,7 @@ test-system:
 		"$(SKOPEO_CIDEV_CONTAINER_FQIN)" \
 			$(MAKE) test-system-local; \
 	rc=$$?; \
-	-$(RM) -rf $$DTEMP; \
+	$(CONTAINER_RUNTIME) unshare rm -rf $$DTEMP; # This probably doesn't work with Docker, oh well, better than nothing... \
 	exit $$rc
 
 # Intended for CI, assumed to already be running in quay.io/libpod/skopeo_cidev container.
