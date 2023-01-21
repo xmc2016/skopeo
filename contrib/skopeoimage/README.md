@@ -11,7 +11,7 @@
 [comment]: <> ()
 [comment]: <> (***ATTENTION*** ***WARNING*** ***ALERT*** ***CAUTION*** ***DANGER***)
 
-<img src="https://cdn.rawgit.com/containers/skopeo/master/docs/skopeo.svg" width="250">
+<img src="https://cdn.rawgit.com/containers/skopeo/main/docs/skopeo.svg" width="250">
 
 ----
 

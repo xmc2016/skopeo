@@ -1,7 +1,8 @@
-skopeo [![Build Status](https://travis-ci.org/containers/skopeo.svg?branch=master)](https://travis-ci.org/containers/skopeo)
+<!--- skopeo [![Build Status](https://travis-ci.org/containers/skopeo.svg?branch=main)](https://travis-ci.org/containers/skopeo)
 =
+--->
 
-<img src="https://cdn.rawgit.com/containers/skopeo/master/docs/skopeo.svg" width="250">
+<img src="https://cdn.rawgit.com/containers/skopeo/main/docs/skopeo.svg" width="250">
 
 ----
 
