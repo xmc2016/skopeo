@@ -101,6 +101,7 @@ Print the version number
 | ----------------------------------------- | ------------------------------------------------------------------------------ |
 | [skopeo-copy(1)](skopeo-copy.1.md)        | Copy an image (manifest, filesystem layers, signatures) from one location to another. |
 | [skopeo-delete(1)](skopeo-delete.1.md)    | Mark the _image-name_ for later deletion by the registry's garbage collector.  |
+| [skopeo-generate-sigstore-key(1)](skopeo-generate-sigstore-key.1.md)    | Generate a sigstore public/private key pair.  |
 | [skopeo-inspect(1)](skopeo-inspect.1.md)  | Return low-level information about _image-name_ in a registry.                 |
 | [skopeo-list-tags(1)](skopeo-list-tags.1.md)  | List image names in a transport-specific collection of images.|
 | [skopeo-login(1)](skopeo-login.1.md)  | Login to a container registry. |

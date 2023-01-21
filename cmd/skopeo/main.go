@@ -98,6 +98,7 @@ func createApp() (*cobra.Command, *globalOptions) {
 	rootCommand.AddCommand(
 		copyCmd(&opts),
 		deleteCmd(&opts),
+		generateSigstoreKeyCmd(),
 		inspectCmd(&opts),
 		layersCmd(&opts),
 		loginCmd(&opts),
