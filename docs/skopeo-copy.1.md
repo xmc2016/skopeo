@@ -219,12 +219,12 @@ The password to access the destination registry.
 ## EXAMPLES
 
 To just copy an image from one registry to another:
-```sh
+```console
 $ skopeo copy docker://quay.io/skopeo/stable:latest docker://registry.example.com/skopeo:latest
 ```
 
 To copy the layers of the docker.io busybox image to a local directory:
-```sh
+```console
 $ mkdir -p /var/lib/images/busybox
 $ skopeo copy docker://busybox:latest dir:/var/lib/images/busybox
 $ ls /var/lib/images/busybox/*
@@ -234,46 +234,45 @@ $ ls /var/lib/images/busybox/*
 ```
 
 To create an archive consumable by `docker load` (but note that using a registry is almost always more efficient):
-```sh
+```console
 $ skopeo copy docker://busybox:latest docker-archive:archive-file.tar:busybox:latest
 ```
 
 To copy and sign an image:
-
-```sh
-# skopeo copy --sign-by dev@example.com containers-storage:example/busybox:streaming docker://example/busybox:gold
+```console
+$ skopeo copy --sign-by dev@example.com containers-storage:example/busybox:streaming docker://example/busybox:gold
 ```
 
 To encrypt an image:
-```sh
-skopeo copy docker://docker.io/library/nginx:1.17.8 oci:local_nginx:1.17.8
+```console
+$ skopeo copy docker://docker.io/library/nginx:1.17.8 oci:local_nginx:1.17.8
 
-openssl genrsa -out private.key 1024
-openssl rsa -in private.key -pubout > public.key
+$ openssl genrsa -out private.key 1024
+$ openssl rsa -in private.key -pubout > public.key
 
-skopeo  copy --encryption-key jwe:./public.key oci:local_nginx:1.17.8 oci:try-encrypt:encrypted
+$ skopeo copy --encryption-key jwe:./public.key oci:local_nginx:1.17.8 oci:try-encrypt:encrypted
 ```
 
 To decrypt an image:
-```sh
-skopeo copy --decryption-key ./private.key oci:try-encrypt:encrypted oci:try-decrypt:decrypted
+```console
+$ skopeo copy --decryption-key ./private.key oci:try-encrypt:encrypted oci:try-decrypt:decrypted
 ```
 
 To copy encrypted image without decryption:
-```sh
-skopeo copy oci:try-encrypt:encrypted oci:try-encrypt-copy:encrypted
+```console
+$ skopeo copy oci:try-encrypt:encrypted oci:try-encrypt-copy:encrypted
 ```
 
 To decrypt an image that requires more than one key:
-```sh
-skopeo copy --decryption-key ./private1.key --decryption-key ./private2.key --decryption-key ./private3.key oci:try-encrypt:encrypted oci:try-decrypt:decrypted
+```console
+$ skopeo copy --decryption-key ./private1.key --decryption-key ./private2.key --decryption-key ./private3.key oci:try-encrypt:encrypted oci:try-decrypt:decrypted
 ```
 
 Container images can also be partially encrypted by specifying the index of the layer. Layers are 0-indexed indices, with support for negative indexing. i.e. 0 is the first layer, -1 is the last layer.
 
 Let's say out of 3 layers that the image `docker.io/library/nginx:1.17.8` is made up of, we only want to encrypt the 2nd layer,
-```sh
-skopeo  copy --encryption-key jwe:./public.key --encrypt-layer 1 oci:local_nginx:1.17.8 oci:try-encrypt:encrypted
+```console
+$ skopeo copy --encryption-key jwe:./public.key --encrypt-layer 1 oci:local_nginx:1.17.8 oci:try-encrypt:encrypted
 ```
 
 ## SEE ALSO

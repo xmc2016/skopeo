@@ -35,17 +35,17 @@ Require HTTPS and verify certificates when talking to the container registry or 
 
 ## EXAMPLES
 
-```
+```console
 $ skopeo logout docker.io
 Remove login credentials for docker.io
 ```
 
-```
+```console
 $ skopeo logout --authfile authdir/myauths.json docker.io
 Remove login credentials for docker.io
 ```
 
-```
+```console
 $ skopeo logout --all
 Remove login credentials for all registries
 ```

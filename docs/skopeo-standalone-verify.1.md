@@ -30,7 +30,7 @@ Print usage statement
 
 ## EXAMPLES
 
-```sh
+```console
 $ skopeo standalone-verify busybox-manifest.json registry.example.com/example/busybox 1D8230F6CDB6A06716E414C1DB72F2188BB46CC8  busybox.signature
 Signature verified, digest sha256:20bf21ed457b390829cdbeec8795a7bea1626991fda603e0d01b4e7f60427e55
 ```

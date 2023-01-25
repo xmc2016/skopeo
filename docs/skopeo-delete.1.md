@@ -85,7 +85,7 @@ The password to access the registry.
 ## EXAMPLES
 
 Mark image example/pause for deletion from the registry.example.com registry:
-```sh
+```console
 $ skopeo delete docker://registry.example.com/example/pause:latest
 ```
 See above for additional details on using the command **delete**.

@@ -57,41 +57,41 @@ Write more detailed information to stdout
 
 ## EXAMPLES
 
-```
+```console
 $ skopeo login docker.io
 Username: testuser
 Password:
 Login Succeeded!
 ```
 
-```
+```console
 $ skopeo login -u testuser -p testpassword localhost:5000
 Login Succeeded!
 ```
 
-```
+```console
 $ skopeo login --authfile authdir/myauths.json docker.io
 Username: testuser
 Password:
 Login Succeeded!
 ```
 
-```
+```console
 $ skopeo login --tls-verify=false -u test -p test localhost:5000
 Login Succeeded!
 ```
 
-```
+```console
 $ skopeo login --cert-dir /etc/containers/certs.d/ -u foo -p bar localhost:5000
 Login Succeeded!
 ```
 
-```
+```console
 $ skopeo login -u testuser  --password-stdin < testpassword.txt docker.io
 Login Succeeded!
 ```
 
-```
+```console
 $ echo $testpassword | skopeo login -u testuser --password-stdin docker.io
 Login Succeeded!
 ```

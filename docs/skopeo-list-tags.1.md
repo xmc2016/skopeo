@@ -79,7 +79,7 @@ This commands refers to repositories using a _transport_`:`_details_ format. The
 
 ### Docker Transport
 To get the list of tags in the "fedora" repository from the docker.io registry (the repository name expands to "library/fedora" per docker transport canonical form):
-```sh
+```console
 $ skopeo list-tags docker://docker.io/fedora
 {
     "Repository": "docker.io/library/fedora",
@@ -110,7 +110,7 @@ $ skopeo list-tags docker://docker.io/fedora
 
 To list the tags in a local host docker/distribution registry on port 5000, in this case for the "fedora" repository:
 
-```sh
+```console
 $ skopeo list-tags docker://localhost:5000/fedora
 {
     "Repository": "localhost:5000/fedora",
@@ -127,7 +127,7 @@ $ skopeo list-tags docker://localhost:5000/fedora
 
 To list the tags in a local docker-archive file:
 
-```sh
+```console
 $ skopeo list-tags docker-archive:/tmp/busybox.tar.gz
 {
     "Tags": [
@@ -138,7 +138,7 @@ $ skopeo list-tags docker-archive:/tmp/busybox.tar.gz
 
 Also supports more than one tags in an archive:
 
-```sh
+```console
 $ skopeo list-tags docker-archive:/tmp/docker-two-images.tar.gz
 {
     "Tags": [
@@ -150,7 +150,7 @@ $ skopeo list-tags docker-archive:/tmp/docker-two-images.tar.gz
 
 Will include a source-index entry for each untagged image:
 
-```sh
+```console
 $ skopeo list-tags docker-archive:/tmp/four-tags-with-an-untag.tar
 {
     "Tags": [

@@ -18,7 +18,7 @@ Print usage statement
 
 ## EXAMPLES
 
-```sh
+```console
 $ skopeo manifest-digest manifest.json
 sha256:a59906e33509d14c036c8678d687bd4eec81ed7c4b8ce907b888c607f6a1e0e6
 ```

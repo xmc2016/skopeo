@@ -31,7 +31,7 @@ The passphare to use when signing with the key ID from `--sign-by`. Only the fir
 
 ## EXAMPLES
 
-```sh
+```console
 $ skopeo standalone-sign busybox-manifest.json registry.example.com/example/busybox 1D8230F6CDB6A06716E414C1DB72F2188BB46CC8 --output busybox.signature
 $
 ```
