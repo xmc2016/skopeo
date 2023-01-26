@@ -87,7 +87,7 @@ Do not list the available tags from the repository in the output. When `true`, t
 ## EXAMPLES
 
 To review information for the image fedora from the docker.io registry:
-```sh
+```console
 $ skopeo inspect docker://docker.io/fedora
 
 {
@@ -126,7 +126,7 @@ $ skopeo inspect docker://docker.io/fedora
 ```
 
 To inspect python from the docker.io registry and not show the available tags:
-```sh
+```console
 $ skopeo inspect --no-tags docker://docker.io/library/python
 {
     "Name": "docker.io/library/python",
@@ -165,12 +165,12 @@ $ skopeo inspect --no-tags docker://docker.io/library/python
 }
 ```
 
-```
+```console
 $ /bin/skopeo inspect --config docker://registry.fedoraproject.org/fedora --format "{{ .Architecture }}"
 amd64
 ```
 
-```
+```console
 $ /bin/skopeo inspect --format '{{ .Env }}' docker://registry.access.redhat.com/ubi8
 [PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin container=oci]
 ```

@@ -35,7 +35,7 @@ Do not use this option if at all avoidable.
 
 ## EXAMPLES
 
-```sh
+```console
 $ skopeo generate-sigstore-key --output-prefix mykey
 ```
 

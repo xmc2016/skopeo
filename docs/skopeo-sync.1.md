@@ -133,7 +133,7 @@ The password to access the destination registry.
 ## EXAMPLES
 
 ### Synchronizing to a local directory
-```
+```console
 $ skopeo sync --src docker --dest dir registry.example.com/busybox /media/usb
 ```
 Images are located at:
@@ -151,7 +151,7 @@ Images are located at:
 /media/usb/busybox:1-glibc
 ```
 Sync run
-```
+```console
 $ skopeo sync --src dir --dest docker /media/usb/busybox:1-glibc my-registry.local.lan/test/
 ```
 Destination registry content:
@@ -161,7 +161,7 @@ my-registry.local.lan/test/busybox   1-glibc
 ```
 
 ### Synchronizing to a local directory, scoped
-```
+```console
 $ skopeo sync --src docker --dest dir --scoped registry.example.com/busybox /media/usb
 ```
 Images are located at:
@@ -174,8 +174,8 @@ Images are located at:
 ```
 
 ### Synchronizing to a container registry
-```
-skopeo sync --src docker --dest docker registry.example.com/busybox my-registry.local.lan
+```console
+$ skopeo sync --src docker --dest docker registry.example.com/busybox my-registry.local.lan
 ```
 Destination registry content:
 ```
@@ -184,8 +184,8 @@ registry.local.lan/busybox   1-glibc, 1-musl, 1-ubuntu, ..., latest
 ```
 
 ### Synchronizing to a container registry keeping the repository
-```
-skopeo sync --src docker --dest docker registry.example.com/repo/busybox my-registry.local.lan/repo
+```console
+$ skopeo sync --src docker --dest docker registry.example.com/repo/busybox my-registry.local.lan/repo
 ```
 Destination registry content:
 ```
@@ -194,8 +194,8 @@ registry.local.lan/repo/busybox   1-glibc, 1-musl, 1-ubuntu, ..., latest
 ```
 
 ### Synchronizing to a container registry with tag suffix
-```
-skopeo sync --src docker --dest docker --append-suffix '-mirror' registry.example.com/busybox my-registry.local.lan
+```console
+$ skopeo sync --src docker --dest docker --append-suffix '-mirror' registry.example.com/busybox my-registry.local.lan
 ```
 Destination registry content:
 ```
@@ -227,8 +227,8 @@ quay.io:
             - latest
 ```
 If the yaml filename is `sync.yml`, sync run:
-```
-skopeo sync --src yaml --dest docker sync.yml my-registry.local.lan/repo/
+```console
+$ skopeo sync --src yaml --dest docker sync.yml my-registry.local.lan/repo/
 ```
 This will copy the following images:
 - Repository `registry.example.com/busybox`: all images, as no tags are specified.
