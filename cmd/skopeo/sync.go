@@ -26,7 +26,7 @@ import (
 	"github.com/opencontainers/go-digest"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // syncOptions contains information retrieved from the skopeo sync command line.
@@ -134,9 +134,9 @@ See skopeo-sync(1) for details.
 // method for the tlsVerifyConfig type.
 // It unmarshals the 'tls-verify' YAML key so that, when they key is not
 // specified, tls verification is enforced.
-func (tls *tlsVerifyConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (tls *tlsVerifyConfig) UnmarshalYAML(value *yaml.Node) error {
 	var verify bool
-	if err := unmarshal(&verify); err != nil {
+	if err := value.Decode(&verify); err != nil {
 		return err
 	}
 
