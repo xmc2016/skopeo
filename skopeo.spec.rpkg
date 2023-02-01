@@ -10,17 +10,22 @@
 # Only intended to build and test the latest unreleased changes.
 
 %global gomodulesmode GO111MODULE=on
+
+# RHEL 8's default %%gobuild macro doesn't account for the BUILDTAGS variable, so we
+# set it separately here and do not depend on RHEL 8's go-srpm-macros package.
+# TODO: fix debuginfo for RHEL 8
+%if !0%{?fedora} && 0%{?rhel} <= 8
+%define gobuild(o:) %{gomodulesmode} go build -buildmode pie -compiler gc -tags="rpm_crashtraceback libtrust_openssl ${BUILDTAGS:-}" -ldflags "${LDFLAGS:-} -B 0x$(head -c20 /dev/urandom|od -An -tx1|tr -d ' \\n') -extldflags '-Wl,-z,relro -Wl,-z,now -specs=/usr/lib/rpm/redhat/redhat-hardened-ld '" -a -v -x %{?**};
+%global with_debug 0
+%else
 %global with_debug 1
+%endif
 
 %if 0%{?with_debug}
 %global _find_debuginfo_dwz_opts %{nil}
 %global _dwz_low_mem_die_limit 0
 %else
 %global debug_package %{nil}
-%endif
-
-%if ! 0%{?gobuild:1}
-%define gobuild(o:) go build -buildmode pie -compiler gc -tags="rpm_crashtraceback ${BUILDTAGS:-}" -ldflags "${LDFLAGS:-} -B 0x$(head -c20 /dev/urandom|od -An -tx1|tr -d ' \\n') -extldflags '-Wl,-z,relro -Wl,-z,now -specs=/usr/lib/rpm/redhat/redhat-hardened-ld '" -a -v -x %{?**};
 %endif
 
 Name: {{{ git_dir_name }}}
@@ -48,11 +53,7 @@ BuildRequires: libassuan-devel
 BuildRequires: pkgconfig
 BuildRequires: make
 BuildRequires: ostree-devel
-%if 0%{?fedora} <= 35
-Requires: containers-common >= 4:1-39
-%else
-Requires: containers-common >= 4:1-46
-%endif
+Requires: containers-common >= 4:1-78
 
 %description
 Command line utility to inspect images and repositories directly on Docker
@@ -95,11 +96,7 @@ export CGO_CFLAGS+=" -m64 -mtune=generic -fcf-protection=full"
 
 LDFLAGS=""
 
-export BUILDTAGS="$(hack/libdm_tag.sh)"
-%if 0%{?rhel}
-export BUILDTAGS="$BUILDTAGS exclude_graphdriver_btrfs btrfs_noversion"
-%endif
-
+export BUILDTAGS="$(hack/libdm_tag.sh) $(hack/btrfs_installed_tag.sh) $(hack/btrfs_tag.sh)"
 %gobuild -o bin/%{name} ./cmd/%{name}
 
 %install
