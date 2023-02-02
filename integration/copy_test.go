@@ -576,8 +576,7 @@ func matchLayerBlobBinaryType(c *check.C, ociImageDirPath string, contentType st
 
 func getFileContentType(out *os.File) (string, error) {
 	buffer := make([]byte, 512)
-	_, err := out.Read(buffer)
-	if err != nil {
+	if _, err := out.Read(buffer); err != nil {
 		return "", err
 	}
 	contentType := http.DetectContentType(buffer)
