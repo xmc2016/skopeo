@@ -132,7 +132,7 @@ See skopeo-sync(1) for details.
 }
 
 // UnmarshalYAML is the implementation of the Unmarshaler interface method
-// method for the tlsVerifyConfig type.
+// for the tlsVerifyConfig type.
 // It unmarshals the 'tls-verify' YAML key so that, when they key is not
 // specified, tls verification is enforced.
 func (tls *tlsVerifyConfig) UnmarshalYAML(value *yaml.Node) error {
