@@ -81,7 +81,7 @@ func (p *proxy) call(method string, args []any) (rval any, fd *pipefd, err error
 	replybuf := make([]byte, maxMsgSize)
 	n, oobn, _, _, err := p.c.ReadMsgUnix(replybuf, oob)
 	if err != nil {
-		err = fmt.Errorf("reading reply: %v", err)
+		err = fmt.Errorf("reading reply: %w", err)
 		return
 	}
 	var reply reply
@@ -99,7 +99,7 @@ func (p *proxy) call(method string, args []any) (rval any, fd *pipefd, err error
 		var scms []syscall.SocketControlMessage
 		scms, err = syscall.ParseSocketControlMessage(oob[:oobn])
 		if err != nil {
-			err = fmt.Errorf("failed to parse control message: %v", err)
+			err = fmt.Errorf("failed to parse control message: %w", err)
 			return
 		}
 		if len(scms) != 1 {
@@ -109,7 +109,7 @@ func (p *proxy) call(method string, args []any) (rval any, fd *pipefd, err error
 		var fds []int
 		fds, err = syscall.ParseUnixRights(&scms[0])
 		if err != nil {
-			err = fmt.Errorf("failed to parse unix rights: %v", err)
+			err = fmt.Errorf("failed to parse unix rights: %w", err)
 			return
 		}
 		fd = &pipefd{
