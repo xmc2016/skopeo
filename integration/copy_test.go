@@ -567,7 +567,7 @@ func matchLayerBlobBinaryType(c *check.C, ociImageDirPath string, contentType st
 		c.Assert(err, check.IsNil)
 
 		if layerContentType == contentType {
-			foundCount = foundCount + 1
+			foundCount++
 		}
 	}
 
