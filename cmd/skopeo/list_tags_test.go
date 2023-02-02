@@ -16,7 +16,6 @@ func TestDockerRepositoryReferenceParser(t *testing.T) {
 		{"docker://somehost.com"},          // Valid default expansion
 		{"docker://nginx"},                 // Valid default expansion
 	} {
-
 		ref, err := parseDockerRepositoryReference(test[0])
 		require.NoError(t, err)
 		expected, err := alltransports.ParseImageName(test[0])
@@ -47,7 +46,6 @@ func TestDockerRepositoryReferenceParserDrift(t *testing.T) {
 		{"docker://somehost.com", "docker.io/library/somehost.com"}, // Valid default expansion
 		{"docker://nginx", "docker.io/library/nginx"},               // Valid default expansion
 	} {
-
 		ref, err := parseDockerRepositoryReference(test[0])
 		ref2, err2 := alltransports.ParseImageName(test[0])
 
