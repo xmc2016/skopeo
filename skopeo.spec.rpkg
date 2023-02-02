@@ -9,16 +9,13 @@
 # CAUTION: This is not a replacement for RPMs provided by your distro.
 # Only intended to build and test the latest unreleased changes.
 
+%global with_debug 1
 %global gomodulesmode GO111MODULE=on
 
 # RHEL 8's default %%gobuild macro doesn't account for the BUILDTAGS variable, so we
 # set it separately here and do not depend on RHEL 8's go-srpm-macros package.
-# TODO: fix debuginfo for RHEL 8
 %if !0%{?fedora} && 0%{?rhel} <= 8
-%define gobuild(o:) %{gomodulesmode} go build -buildmode pie -compiler gc -tags="rpm_crashtraceback libtrust_openssl ${BUILDTAGS:-}" -ldflags "${LDFLAGS:-} -B 0x$(head -c20 /dev/urandom|od -An -tx1|tr -d ' \\n') -extldflags '-Wl,-z,relro -Wl,-z,now -specs=/usr/lib/rpm/redhat/redhat-hardened-ld '" -a -v -x %{?**};
-%global with_debug 0
-%else
-%global with_debug 1
+%define gobuild(o:) %{gomodulesmode} go build -buildmode pie -compiler gc -tags="rpm_crashtraceback libtrust_openssl ${BUILDTAGS:-}" -ldflags "-linkmode=external -compressdwarf=false ${LDFLAGS:-} -B 0x$(head -c20 /dev/urandom|od -An -tx1|tr -d ' \\n') -extldflags '%__global_ldflags'" -a -v -x %{?**};
 %endif
 
 %if 0%{?with_debug}
