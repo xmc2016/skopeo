@@ -668,7 +668,7 @@ func (h *proxyHandler) GetLayerInfo(args []any) (replyBuf, error) {
 		layerInfos = img.LayerInfos()
 	}
 
-	var layers []convertedLayerInfo
+	layers := make([]convertedLayerInfo, 0, len(layerInfos))
 	for _, layer := range layerInfos {
 		layers = append(layers, convertedLayerInfo{layer.Digest, layer.Size, layer.MediaType})
 	}
