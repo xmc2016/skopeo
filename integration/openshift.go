@@ -44,7 +44,7 @@ func startOpenshiftCluster(c *check.C) *openshiftCluster {
 	return cluster
 }
 
-// clusterCmd creates an exec.Cmd in cluster.workingDir with current environment modified by environment
+// clusterCmd creates an exec.Cmd in cluster.workingDir with current environment modified by environment.
 func (cluster *openshiftCluster) clusterCmd(env map[string]string, name string, args ...string) *exec.Cmd {
 	cmd := exec.Command(name, args...)
 	cmd.Dir = cluster.workingDir

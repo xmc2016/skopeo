@@ -42,7 +42,7 @@ func consumeAndLogOutputStream(c *check.C, id string, f io.ReadCloser, err error
 	}()
 }
 
-// consumeAndLogOutputs causes all output to stdout and stderr from an *exec.Cmd to be logged to c
+// consumeAndLogOutputs causes all output to stdout and stderr from an *exec.Cmd to be logged to c.
 func consumeAndLogOutputs(c *check.C, id string, cmd *exec.Cmd) {
 	stdout, err := cmd.StdoutPipe()
 	consumeAndLogOutputStream(c, id+" stdout", stdout, err)
