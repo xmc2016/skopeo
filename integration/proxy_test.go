@@ -17,7 +17,7 @@ import (
 )
 
 // This image is known to be x86_64 only right now
-const knownNotManifestListedImage_x8664 = "docker://quay.io/coreos/11bot"
+const knownNotManifestListedImageX8664 = "docker://quay.io/coreos/11bot"
 
 // knownNotExtantImage would be very surprising if it did exist
 const knownNotExtantImage = "docker://quay.io/centos/centos:opensusewindowsubuntu"
@@ -232,7 +232,7 @@ type byteFetch struct {
 }
 
 func runTestGetManifestAndConfig(p *proxy, img string) error {
-	v, err := p.callNoFd("OpenImage", []any{knownNotManifestListedImage_x8664})
+	v, err := p.callNoFd("OpenImage", []any{knownNotManifestListedImageX8664})
 	if err != nil {
 		return err
 	}
@@ -247,7 +247,7 @@ func runTestGetManifestAndConfig(p *proxy, img string) error {
 	}
 
 	// Also verify the optional path
-	v, err = p.callNoFd("OpenImageOptional", []any{knownNotManifestListedImage_x8664})
+	v, err = p.callNoFd("OpenImageOptional", []any{knownNotManifestListedImageX8664})
 	if err != nil {
 		return err
 	}
@@ -338,9 +338,9 @@ func (s *ProxySuite) TestProxy(c *check.C) {
 	p, err := newProxy()
 	c.Assert(err, check.IsNil)
 
-	err = runTestGetManifestAndConfig(p, knownNotManifestListedImage_x8664)
+	err = runTestGetManifestAndConfig(p, knownNotManifestListedImageX8664)
 	if err != nil {
-		err = fmt.Errorf("Testing image %s: %v", knownNotManifestListedImage_x8664, err)
+		err = fmt.Errorf("Testing image %s: %v", knownNotManifestListedImageX8664, err)
 	}
 	c.Assert(err, check.IsNil)
 
