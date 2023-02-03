@@ -154,7 +154,7 @@ func (cluster *openshiftCluster) prepareRegistryConfig(c *check.C) {
 }
 
 // startRegistry starts the OpenShift registry with configPart on port, waits for it to be ready, and returns the process object, or terminates on failure.
-func (cluster *openshiftCluster) startRegistryProcess(c *check.C, port int, configPath string) *exec.Cmd {
+func (cluster *openshiftCluster) startRegistryProcess(c *check.C, port uint16, configPath string) *exec.Cmd {
 	cmd := cluster.clusterCmd(map[string]string{
 		"KUBECONFIG":          "openshift.local.registry/openshift-registry.kubeconfig",
 		"DOCKER_REGISTRY_URL": fmt.Sprintf("127.0.0.1:%d", port),

@@ -6,6 +6,7 @@ import (
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/storage/pkg/unshare"
 	"github.com/syndtr/gocapability/capability"
+	"golang.org/x/exp/slices"
 )
 
 var neededCapabilities = []capability.Cap{
@@ -25,25 +26,25 @@ func maybeReexec() error {
 	if err != nil {
 		return fmt.Errorf("error reading the current capabilities sets: %w", err)
 	}
-	for _, cap := range neededCapabilities {
-		if !capabilities.Get(capability.EFFECTIVE, cap) {
-			// We miss a capability we need, create a user namespaces
-			unshare.MaybeReexecUsingUserNamespace(true)
-			return nil
-		}
+	if slices.ContainsFunc(neededCapabilities, func(cap capability.Cap) bool {
+		return !capabilities.Get(capability.EFFECTIVE, cap)
+	}) {
+		// We miss a capability we need, create a user namespaces
+		unshare.MaybeReexecUsingUserNamespace(true)
+		return nil
 	}
 	return nil
 }
 
 func reexecIfNecessaryForImages(imageNames ...string) error {
 	// Check if container-storage is used before doing unshare
-	for _, imageName := range imageNames {
+	if slices.ContainsFunc(imageNames, func(imageName string) bool {
 		transport := alltransports.TransportFromImageName(imageName)
 		// Hard-code the storage name to avoid a reference on c/image/storage.
 		// See https://github.com/containers/skopeo/issues/771#issuecomment-563125006.
-		if transport != nil && transport.Name() == "containers-storage" {
-			return maybeReexec()
-		}
+		return transport != nil && transport.Name() == "containers-storage"
+	}) {
+		return maybeReexec()
 	}
 	return nil
 }

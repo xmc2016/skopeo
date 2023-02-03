@@ -32,7 +32,7 @@ type request struct {
 	// Method is the name of the function
 	Method string `json:"method"`
 	// Args is the arguments (parsed inside the function)
-	Args []interface{} `json:"args"`
+	Args []any `json:"args"`
 }
 
 // reply is copied from proxy.go
@@ -40,7 +40,7 @@ type reply struct {
 	// Success is true if and only if the call succeeded.
 	Success bool `json:"success"`
 	// Value is an arbitrary value (or values, as array/map) returned from the call.
-	Value interface{} `json:"value"`
+	Value any `json:"value"`
 	// PipeID is an index into open pipes, and should be passed to FinishPipe
 	PipeID uint32 `json:"pipeid"`
 	// Error should be non-empty if Success == false
@@ -60,7 +60,7 @@ type pipefd struct {
 	fd *os.File
 }
 
-func (p *proxy) call(method string, args []interface{}) (rval interface{}, fd *pipefd, err error) {
+func (p *proxy) call(method string, args []any) (rval any, fd *pipefd, err error) {
 	req := request{
 		Method: method,
 		Args:   args,
@@ -122,7 +122,7 @@ func (p *proxy) call(method string, args []interface{}) (rval interface{}, fd *p
 	return
 }
 
-func (p *proxy) callNoFd(method string, args []interface{}) (rval interface{}, err error) {
+func (p *proxy) callNoFd(method string, args []any) (rval any, err error) {
 	var fd *pipefd
 	rval, fd, err = p.call(method, args)
 	if err != nil {
@@ -135,7 +135,7 @@ func (p *proxy) callNoFd(method string, args []interface{}) (rval interface{}, e
 	return rval, nil
 }
 
-func (p *proxy) callReadAllBytes(method string, args []interface{}) (rval interface{}, buf []byte, err error) {
+func (p *proxy) callReadAllBytes(method string, args []any) (rval any, buf []byte, err error) {
 	var fd *pipefd
 	rval, fd, err = p.call(method, args)
 	if err != nil {
@@ -153,7 +153,7 @@ func (p *proxy) callReadAllBytes(method string, args []interface{}) (rval interf
 			err:     err,
 		}
 	}()
-	_, err = p.callNoFd("FinishPipe", []interface{}{fd.id})
+	_, err = p.callNoFd("FinishPipe", []any{fd.id})
 	if err != nil {
 		return
 	}
@@ -233,7 +233,7 @@ type byteFetch struct {
 }
 
 func runTestGetManifestAndConfig(p *proxy, img string) error {
-	v, err := p.callNoFd("OpenImage", []interface{}{knownNotManifestListedImage_x8664})
+	v, err := p.callNoFd("OpenImage", []any{knownNotManifestListedImage_x8664})
 	if err != nil {
 		return err
 	}
@@ -248,7 +248,7 @@ func runTestGetManifestAndConfig(p *proxy, img string) error {
 	}
 
 	// Also verify the optional path
-	v, err = p.callNoFd("OpenImageOptional", []interface{}{knownNotManifestListedImage_x8664})
+	v, err = p.callNoFd("OpenImageOptional", []any{knownNotManifestListedImage_x8664})
 	if err != nil {
 		return err
 	}
@@ -262,12 +262,12 @@ func runTestGetManifestAndConfig(p *proxy, img string) error {
 		return fmt.Errorf("got zero from expected image")
 	}
 
-	_, err = p.callNoFd("CloseImage", []interface{}{imgid2})
+	_, err = p.callNoFd("CloseImage", []any{imgid2})
 	if err != nil {
 		return err
 	}
 
-	_, manifestBytes, err := p.callReadAllBytes("GetManifest", []interface{}{imgid})
+	_, manifestBytes, err := p.callReadAllBytes("GetManifest", []any{imgid})
 	if err != nil {
 		return err
 	}
@@ -276,7 +276,7 @@ func runTestGetManifestAndConfig(p *proxy, img string) error {
 		return err
 	}
 
-	_, configBytes, err := p.callReadAllBytes("GetFullConfig", []interface{}{imgid})
+	_, configBytes, err := p.callReadAllBytes("GetFullConfig", []any{imgid})
 	if err != nil {
 		return err
 	}
@@ -295,7 +295,7 @@ func runTestGetManifestAndConfig(p *proxy, img string) error {
 	}
 
 	// Also test this legacy interface
-	_, ctrconfigBytes, err := p.callReadAllBytes("GetConfig", []interface{}{imgid})
+	_, ctrconfigBytes, err := p.callReadAllBytes("GetConfig", []any{imgid})
 	if err != nil {
 		return err
 	}
@@ -310,7 +310,7 @@ func runTestGetManifestAndConfig(p *proxy, img string) error {
 		return fmt.Errorf("No CMD or ENTRYPOINT set")
 	}
 
-	_, err = p.callNoFd("CloseImage", []interface{}{imgid})
+	_, err = p.callNoFd("CloseImage", []any{imgid})
 	if err != nil {
 		return err
 	}
@@ -319,7 +319,7 @@ func runTestGetManifestAndConfig(p *proxy, img string) error {
 }
 
 func runTestOpenImageOptionalNotFound(p *proxy, img string) error {
-	v, err := p.callNoFd("OpenImageOptional", []interface{}{img})
+	v, err := p.callNoFd("OpenImageOptional", []any{img})
 	if err != nil {
 		return err
 	}

@@ -74,7 +74,7 @@ func (opts *inspectOptions) run(args []string, stdout io.Writer) (retErr error) 
 		rawManifest []byte
 		src         types.ImageSource
 		imgInspect  *types.ImageInspectInfo
-		data        []interface{}
+		data        []any
 	)
 	ctx, cancel := opts.global.commandTimeoutContext()
 	defer cancel()
@@ -240,7 +240,7 @@ func (opts *inspectOptions) run(args []string, stdout io.Writer) (retErr error) 
 	return printTmpl(stdout, row, data)
 }
 
-func printTmpl(stdout io.Writer, row string, data []interface{}) error {
+func printTmpl(stdout io.Writer, row string, data []any) error {
 	t, err := template.New("skopeo inspect").Parse(row)
 	if err != nil {
 		return err

@@ -115,7 +115,7 @@ type request struct {
 	// Method is the name of the function
 	Method string `json:"method"`
 	// Args is the arguments (parsed inside the function)
-	Args []interface{} `json:"args"`
+	Args []any `json:"args"`
 }
 
 // reply is serialized to JSON as the return value from a function call.
@@ -123,7 +123,7 @@ type reply struct {
 	// Success is true if and only if the call succeeded.
 	Success bool `json:"success"`
 	// Value is an arbitrary value (or values, as array/map) returned from the call.
-	Value interface{} `json:"value"`
+	Value any `json:"value"`
 	// PipeID is an index into open pipes, and should be passed to FinishPipe
 	PipeID uint32 `json:"pipeid"`
 	// Error should be non-empty if Success == false
@@ -133,7 +133,7 @@ type reply struct {
 // replyBuf is our internal deserialization of reply plus optional fd
 type replyBuf struct {
 	// value will be converted to a reply Value
-	value interface{}
+	value any
 	// fd is the read half of a pipe, passed back to the client
 	fd *os.File
 	// pipeid will be provided to the client as PipeID, an index into our open pipes
@@ -185,7 +185,7 @@ type convertedLayerInfo struct {
 }
 
 // Initialize performs one-time initialization, and returns the protocol version
-func (h *proxyHandler) Initialize(args []interface{}) (replyBuf, error) {
+func (h *proxyHandler) Initialize(args []any) (replyBuf, error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
@@ -214,7 +214,7 @@ func (h *proxyHandler) Initialize(args []interface{}) (replyBuf, error) {
 
 // OpenImage accepts a string image reference i.e. TRANSPORT:REF - like `skopeo copy`.
 // The return value is an opaque integer handle.
-func (h *proxyHandler) OpenImage(args []interface{}) (replyBuf, error) {
+func (h *proxyHandler) OpenImage(args []any) (replyBuf, error) {
 	return h.openImageImpl(args, false)
 }
 
@@ -237,7 +237,7 @@ func isNotFoundImageError(err error) bool {
 		errors.Is(err, ocilayout.ImageNotFoundError{})
 }
 
-func (h *proxyHandler) openImageImpl(args []interface{}, allowNotFound bool) (replyBuf, error) {
+func (h *proxyHandler) openImageImpl(args []any, allowNotFound bool) (replyBuf, error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 	var ret replyBuf
@@ -282,11 +282,11 @@ func (h *proxyHandler) openImageImpl(args []interface{}, allowNotFound bool) (re
 // OpenImage accepts a string image reference i.e. TRANSPORT:REF - like `skopeo copy`.
 // The return value is an opaque integer handle.  If the image does not exist, zero
 // is returned.
-func (h *proxyHandler) OpenImageOptional(args []interface{}) (replyBuf, error) {
+func (h *proxyHandler) OpenImageOptional(args []any) (replyBuf, error) {
 	return h.openImageImpl(args, true)
 }
 
-func (h *proxyHandler) CloseImage(args []interface{}) (replyBuf, error) {
+func (h *proxyHandler) CloseImage(args []any) (replyBuf, error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 	var ret replyBuf
@@ -307,7 +307,7 @@ func (h *proxyHandler) CloseImage(args []interface{}) (replyBuf, error) {
 	return ret, nil
 }
 
-func parseImageID(v interface{}) (uint32, error) {
+func parseImageID(v any) (uint32, error) {
 	imgidf, ok := v.(float64)
 	if !ok {
 		return 0, fmt.Errorf("expecting integer imageid, not %T", v)
@@ -316,7 +316,7 @@ func parseImageID(v interface{}) (uint32, error) {
 }
 
 // parseUint64 validates that a number fits inside a JavaScript safe integer
-func parseUint64(v interface{}) (uint64, error) {
+func parseUint64(v any) (uint64, error) {
 	f, ok := v.(float64)
 	if !ok {
 		return 0, fmt.Errorf("expecting numeric, not %T", v)
@@ -327,7 +327,7 @@ func parseUint64(v interface{}) (uint64, error) {
 	return uint64(f), nil
 }
 
-func (h *proxyHandler) parseImageFromID(v interface{}) (*openImage, error) {
+func (h *proxyHandler) parseImageFromID(v any) (*openImage, error) {
 	imgid, err := parseImageID(v)
 	if err != nil {
 		return nil, err
@@ -357,7 +357,7 @@ func (h *proxyHandler) allocPipe() (*os.File, *activePipe, error) {
 
 // returnBytes generates a return pipe() from a byte array
 // In the future it might be nicer to return this via memfd_create()
-func (h *proxyHandler) returnBytes(retval interface{}, buf []byte) (replyBuf, error) {
+func (h *proxyHandler) returnBytes(retval any, buf []byte) (replyBuf, error) {
 	var ret replyBuf
 	piper, f, err := h.allocPipe()
 	if err != nil {
@@ -419,7 +419,7 @@ func (h *proxyHandler) cacheTargetManifest(img *openImage) error {
 
 // GetManifest returns a copy of the manifest, converted to OCI format, along with the original digest.
 // Manifest lists are resolved to the current operating system and architecture.
-func (h *proxyHandler) GetManifest(args []interface{}) (replyBuf, error) {
+func (h *proxyHandler) GetManifest(args []any) (replyBuf, error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
@@ -490,7 +490,7 @@ func (h *proxyHandler) GetManifest(args []interface{}) (replyBuf, error) {
 
 // GetFullConfig returns a copy of the image configuration, converted to OCI format.
 // https://github.com/opencontainers/image-spec/blob/main/config.md
-func (h *proxyHandler) GetFullConfig(args []interface{}) (replyBuf, error) {
+func (h *proxyHandler) GetFullConfig(args []any) (replyBuf, error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
@@ -527,7 +527,7 @@ func (h *proxyHandler) GetFullConfig(args []interface{}) (replyBuf, error) {
 // GetConfig returns a copy of the container runtime configuration, converted to OCI format.
 // Note that due to a historical mistake, this returns not the full image configuration,
 // but just the container runtime configuration.  You should use GetFullConfig instead.
-func (h *proxyHandler) GetConfig(args []interface{}) (replyBuf, error) {
+func (h *proxyHandler) GetConfig(args []any) (replyBuf, error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
@@ -562,7 +562,7 @@ func (h *proxyHandler) GetConfig(args []interface{}) (replyBuf, error) {
 }
 
 // GetBlob fetches a blob, performing digest verification.
-func (h *proxyHandler) GetBlob(args []interface{}) (replyBuf, error) {
+func (h *proxyHandler) GetBlob(args []any) (replyBuf, error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
@@ -632,7 +632,7 @@ func (h *proxyHandler) GetBlob(args []interface{}) (replyBuf, error) {
 // This needs to be called since the data returned by GetManifest() does not allow to correctly
 // calling GetBlob() for the containers-storage: transport (which doesn’t store the original compressed
 // representations referenced in the manifest).
-func (h *proxyHandler) GetLayerInfo(args []interface{}) (replyBuf, error) {
+func (h *proxyHandler) GetLayerInfo(args []any) (replyBuf, error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
@@ -678,7 +678,7 @@ func (h *proxyHandler) GetLayerInfo(args []interface{}) (replyBuf, error) {
 }
 
 // FinishPipe waits for the worker goroutine to finish, and closes the write side of the pipe.
-func (h *proxyHandler) FinishPipe(args []interface{}) (replyBuf, error) {
+func (h *proxyHandler) FinishPipe(args []any) (replyBuf, error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 

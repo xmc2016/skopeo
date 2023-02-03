@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"net"
+	"net/netip"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -105,8 +106,9 @@ func runExecCmdWithInput(c *check.C, cmd *exec.Cmd, input string) {
 }
 
 // isPortOpen returns true iff the specified port on localhost is open.
-func isPortOpen(port int) bool {
-	conn, err := net.DialTCP("tcp", nil, &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: port})
+func isPortOpen(port uint16) bool {
+	ap := netip.AddrPortFrom(netip.AddrFrom4([4]byte{127, 0, 0, 1}), port)
+	conn, err := net.DialTCP("tcp", nil, net.TCPAddrFromAddrPort(ap))
 	if err != nil {
 		return false
 	}
@@ -118,7 +120,7 @@ func isPortOpen(port int) bool {
 // The checking can be aborted by sending a value to the terminate channel, which the caller should
 // always do using
 // defer func() {terminate <- true}()
-func newPortChecker(c *check.C, port int) (portOpen <-chan bool, terminate chan<- bool) {
+func newPortChecker(c *check.C, port uint16) (portOpen <-chan bool, terminate chan<- bool) {
 	portOpenBidi := make(chan bool)
 	// Buffered, so that sending a terminate request after the goroutine has exited does not block.
 	terminateBidi := make(chan bool, 1)

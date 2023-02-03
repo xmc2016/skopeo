@@ -607,12 +607,12 @@ func assertDirImagesAreEqual(c *check.C, dir1, dir2 string) {
 // Check whether schema1 dir: images in dir1 and dir2 are equal, ignoring schema1 signatures and the embedded path/tag values, which should have the expected values.
 func assertSchema1DirImagesAreEqualExceptNames(c *check.C, dir1, ref1, dir2, ref2 string) {
 	// The manifests may have different JWS signatures and names; so, unmarshal and delete these elements.
-	manifests := []map[string]interface{}{}
+	manifests := []map[string]any{}
 	for dir, ref := range map[string]string{dir1: ref1, dir2: ref2} {
 		manifestPath := filepath.Join(dir, "manifest.json")
 		m, err := os.ReadFile(manifestPath)
 		c.Assert(err, check.IsNil)
-		data := map[string]interface{}{}
+		data := map[string]any{}
 		err = json.Unmarshal(m, &data)
 		c.Assert(err, check.IsNil)
 		c.Assert(data["schemaVersion"], check.Equals, float64(1))

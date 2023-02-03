@@ -315,14 +315,11 @@ func parseCreds(creds string) (string, string, error) {
 	if creds == "" {
 		return "", "", errors.New("credentials can't be empty")
 	}
-	up := strings.SplitN(creds, ":", 2)
-	if len(up) == 1 {
-		return up[0], "", nil
-	}
-	if up[0] == "" {
+	username, password, _ := strings.Cut(creds, ":") // Sets password to "" if there is no ":"
+	if username == "" {
 		return "", "", errors.New("username can't be empty")
 	}
-	return up[0], up[1], nil
+	return username, password, nil
 }
 
 func getDockerAuth(creds string) (*types.DockerAuthConfig, error) {
