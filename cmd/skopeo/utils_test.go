@@ -385,7 +385,6 @@ func TestParseManifestFormat(t *testing.T) {
 // since there is a shared authfile image option and a non-shared (prefixed) one, make sure the override logic
 // works correctly.
 func TestImageOptionsAuthfileOverride(t *testing.T) {
-
 	for _, testCase := range []struct {
 		flagPrefix           string
 		cmdFlags             []string

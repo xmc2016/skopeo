@@ -11,14 +11,13 @@ import (
 	"syscall"
 	"time"
 
-	"gopkg.in/check.v1"
-
 	"github.com/containers/image/v5/manifest"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"gopkg.in/check.v1"
 )
 
 // This image is known to be x86_64 only right now
-const knownNotManifestListedImage_x8664 = "docker://quay.io/coreos/11bot"
+const knownNotManifestListedImageX8664 = "docker://quay.io/coreos/11bot"
 
 // knownNotExtantImage would be very surprising if it did exist
 const knownNotExtantImage = "docker://quay.io/centos/centos:opensusewindowsubuntu"
@@ -81,7 +80,7 @@ func (p *proxy) call(method string, args []any) (rval any, fd *pipefd, err error
 	replybuf := make([]byte, maxMsgSize)
 	n, oobn, _, _, err := p.c.ReadMsgUnix(replybuf, oob)
 	if err != nil {
-		err = fmt.Errorf("reading reply: %v", err)
+		err = fmt.Errorf("reading reply: %w", err)
 		return
 	}
 	var reply reply
@@ -99,7 +98,7 @@ func (p *proxy) call(method string, args []any) (rval any, fd *pipefd, err error
 		var scms []syscall.SocketControlMessage
 		scms, err = syscall.ParseSocketControlMessage(oob[:oobn])
 		if err != nil {
-			err = fmt.Errorf("failed to parse control message: %v", err)
+			err = fmt.Errorf("failed to parse control message: %w", err)
 			return
 		}
 		if len(scms) != 1 {
@@ -109,7 +108,7 @@ func (p *proxy) call(method string, args []any) (rval any, fd *pipefd, err error
 		var fds []int
 		fds, err = syscall.ParseUnixRights(&scms[0])
 		if err != nil {
-			err = fmt.Errorf("failed to parse unix rights: %v", err)
+			err = fmt.Errorf("failed to parse unix rights: %w", err)
 			return
 		}
 		fd = &pipefd{
@@ -233,7 +232,7 @@ type byteFetch struct {
 }
 
 func runTestGetManifestAndConfig(p *proxy, img string) error {
-	v, err := p.callNoFd("OpenImage", []any{knownNotManifestListedImage_x8664})
+	v, err := p.callNoFd("OpenImage", []any{knownNotManifestListedImageX8664})
 	if err != nil {
 		return err
 	}
@@ -248,7 +247,7 @@ func runTestGetManifestAndConfig(p *proxy, img string) error {
 	}
 
 	// Also verify the optional path
-	v, err = p.callNoFd("OpenImageOptional", []any{knownNotManifestListedImage_x8664})
+	v, err = p.callNoFd("OpenImageOptional", []any{knownNotManifestListedImageX8664})
 	if err != nil {
 		return err
 	}
@@ -339,9 +338,9 @@ func (s *ProxySuite) TestProxy(c *check.C) {
 	p, err := newProxy()
 	c.Assert(err, check.IsNil)
 
-	err = runTestGetManifestAndConfig(p, knownNotManifestListedImage_x8664)
+	err = runTestGetManifestAndConfig(p, knownNotManifestListedImageX8664)
 	if err != nil {
-		err = fmt.Errorf("Testing image %s: %v", knownNotManifestListedImage_x8664, err)
+		err = fmt.Errorf("Testing image %s: %v", knownNotManifestListedImageX8664, err)
 	}
 	c.Assert(err, check.IsNil)
 

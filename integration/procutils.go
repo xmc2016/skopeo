@@ -7,6 +7,6 @@ import (
 	"os/exec"
 )
 
-// cmdLifecycleToParentIfPossible tries to exit if the parent process exits (only works on Linux)
+// cmdLifecycleToParentIfPossible tries to exit if the parent process exits (only works on Linux).
 func cmdLifecycleToParentIfPossible(c *exec.Cmd) {
 }

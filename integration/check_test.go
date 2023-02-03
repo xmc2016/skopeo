@@ -39,14 +39,11 @@ func (s *SkopeoSuite) TearDownSuite(c *check.C) {
 		s.regV2.tearDown(c)
 	}
 	if s.regV2WithAuth != nil {
-		//cmd := exec.Command("docker", "logout", s.regV2WithAuth)
-		//c.Assert(cmd.Run(), check.IsNil)
+		// cmd := exec.Command("docker", "logout", s.regV2WithAuth)
+		// c.Assert(cmd.Run(), check.IsNil)
 		s.regV2WithAuth.tearDown(c)
 	}
 }
-
-// TODO like dockerCmd but much easier, just out,err
-//func skopeoCmd()
 
 func (s *SkopeoSuite) TestVersion(c *check.C) {
 	assertSkopeoSucceeds(c, fmt.Sprintf(".*%s version %s.*", skopeoBinary, version.Version),

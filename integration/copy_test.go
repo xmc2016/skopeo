@@ -567,7 +567,7 @@ func matchLayerBlobBinaryType(c *check.C, ociImageDirPath string, contentType st
 		c.Assert(err, check.IsNil)
 
 		if layerContentType == contentType {
-			foundCount = foundCount + 1
+			foundCount++
 		}
 	}
 
@@ -576,8 +576,7 @@ func matchLayerBlobBinaryType(c *check.C, ociImageDirPath string, contentType st
 
 func getFileContentType(out *os.File) (string, error) {
 	buffer := make([]byte, 512)
-	_, err := out.Read(buffer)
-	if err != nil {
+	if _, err := out.Read(buffer); err != nil {
 		return "", err
 	}
 	contentType := http.DetectContentType(buffer)
