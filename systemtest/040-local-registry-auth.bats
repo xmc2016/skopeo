@@ -16,7 +16,7 @@ function setup() {
 
     _cred_dir=$TESTDIR/credentials
     # It is important to change XDG_RUNTIME_DIR only after we start the registry, otherwise it affects the path of $XDG_RUNTIME_DIR/netns maintained by Podman,
-    # making it imposible to clean up after ourselves.
+    # making it impossible to clean up after ourselves.
     export XDG_RUNTIME_DIR=$_cred_dir
     mkdir -p $_cred_dir/containers
     # Remove old/stale cred file
