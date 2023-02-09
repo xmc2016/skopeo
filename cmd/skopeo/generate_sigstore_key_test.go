@@ -62,7 +62,7 @@ func TestGenerateSigstoreKey(t *testing.T) {
 	// we have to trigger a write failure.
 
 	// Success
-	// Just a smoke-test, useability of the keys is tested in the generate implementation.
+	// Just a smoke-test, usability of the keys is tested in the generate implementation.
 	dir := t.TempDir()
 	prefix := filepath.Join(dir, "prefix")
 	passphraseFile := filepath.Join(dir, "passphrase")

@@ -44,7 +44,7 @@ func noteCloseFailure(err error, description string, closeErr error) error {
 	if err == nil {
 		return fmt.Errorf("%s: %w", description, closeErr)
 	}
-	// In this case we prioritize the primary error for use with %w; closeErr is usually less relevant, or might be a consequence of the primary erorr.
+	// In this case we prioritize the primary error for use with %w; closeErr is usually less relevant, or might be a consequence of the primary error.
 	return fmt.Errorf("%w (%s: %v)", err, description, closeErr)
 }
 
