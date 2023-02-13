@@ -104,7 +104,7 @@ func (s *syncSuite) TearDownSuite() {
 	}
 
 	if s.registry != nil {
-		s.registry.tearDown(t)
+		s.registry.tearDown()
 	}
 	if s.cluster != nil {
 		s.cluster.tearDown(t)

@@ -188,7 +188,7 @@ func fileFromFixture(t *testing.T, inputPath string, edits map[string]string) st
 
 // runDecompressDirs runs decompress-dirs.sh using exec.Command().CombinedOutput, verifies that the exit status is 0,
 // and optionally that the output matches a multi-line regexp if it is nonempty; or terminates c on failure
-func runDecompressDirs(t *testing.T, regexp string, args ...string) {
+func runDecompressDirs(t *testing.T, args ...string) {
 	t.Logf("Running %s %s", decompressDirsBinary, strings.Join(args, " "))
 	for i, dir := range args {
 		m, err := os.ReadFile(filepath.Join(dir, "manifest.json"))
@@ -204,9 +204,6 @@ func runDecompressDirs(t *testing.T, regexp string, args ...string) {
 		m, err := os.ReadFile(filepath.Join(dir, "manifest.json"))
 		require.NoError(t, err)
 		t.Logf("manifest %d after: %s", i+1, string(m))
-	}
-	if regexp != "" {
-		assert.Regexp(t, "(?s)"+regexp, string(out)) // (?s) : '.' will also match newlines
 	}
 }
 
