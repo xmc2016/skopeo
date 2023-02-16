@@ -21,7 +21,6 @@ import (
 	"github.com/imdario/mergo"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
-	"golang.org/x/net/http2"
 	"gopkg.in/yaml.v3"
 )
 
@@ -212,7 +211,7 @@ func (config *directClientConfig) ClientConfig() (*restConfig, error) {
 			return nil, err
 		}
 
-		serverAuthPartialConfig, err := getServerIdentificationPartialConfig(configAuthInfo, configClusterInfo)
+		serverAuthPartialConfig, err := getServerIdentificationPartialConfig(configClusterInfo)
 		if err != nil {
 			return nil, err
 		}
@@ -231,7 +230,7 @@ func (config *directClientConfig) ClientConfig() (*restConfig, error) {
 // 1.  configClusterInfo (the final result of command line flags and merged .kubeconfig files)
 // 2.  configAuthInfo.auth-path (this file can contain information that conflicts with #1, and we want #1 to win the priority)
 // 3.  load the ~/.kubernetes_auth file as a default
-func getServerIdentificationPartialConfig(configAuthInfo clientcmdAuthInfo, configClusterInfo clientcmdCluster) (*restConfig, error) {
+func getServerIdentificationPartialConfig(configClusterInfo clientcmdCluster) (*restConfig, error) {
 	mergedConfig := &restConfig{}
 
 	// configClusterInfo holds the information identify the server provided by .kubeconfig
@@ -931,14 +930,14 @@ func tlsCacheGet(config *restConfig) (http.RoundTripper, error) {
 		Proxy:               newProxierWithNoProxyCIDR(http.ProxyFromEnvironment),
 		TLSHandshakeTimeout: 10 * time.Second,
 		TLSClientConfig:     tlsConfig,
-		Dial: (&net.Dialer{
+		DialContext: (&net.Dialer{
 			Timeout:   30 * time.Second,
 			KeepAlive: 30 * time.Second,
-		}).Dial,
+		}).DialContext,
 	}
 	// Allow clients to disable http2 if needed.
 	if s := os.Getenv("DISABLE_HTTP2"); len(s) == 0 {
-		_ = http2.ConfigureTransport(t)
+		t.ForceAttemptHTTP2 = true
 	}
 	return t, nil
 }
