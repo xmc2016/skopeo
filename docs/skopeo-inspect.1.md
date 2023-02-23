@@ -42,6 +42,7 @@ Use docker daemon host at _host_ (`docker-daemon:` transport only)
 
 Format the output using the given Go template.
 The keys of the returned JSON can be used as the values for the --format flag (see examples below).
+Supports the Go templating functions available at https://pkg.go.dev/github.com/containers/common/pkg/report#hdr-Template_Functions
 
 **--help**, **-h**
 
