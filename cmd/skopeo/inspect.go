@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"text/tabwriter"
-	"text/template"
 
 	"github.com/containers/common/pkg/report"
 	"github.com/containers/common/pkg/retry"
@@ -74,6 +72,7 @@ func (opts *inspectOptions) run(args []string, stdout io.Writer) (retErr error) 
 		rawManifest []byte
 		src         types.ImageSource
 		imgInspect  *types.ImageInspectInfo
+		rpt         *report.Formatter
 		data        []any
 	)
 	ctx, cancel := opts.global.commandTimeoutContext()
@@ -158,9 +157,13 @@ func (opts *inspectOptions) run(args []string, stdout io.Writer) (retErr error) 
 				fmt.Fprintf(stdout, "%s\n", string(out))
 			}
 		} else {
-			row := "{{range . }}" + report.NormalizeFormat(opts.format) + "{{end}}"
+			rpt, err = report.New(stdout, "skopeo inspect").Parse(report.OriginUser, opts.format)
+			if err != nil {
+				return err
+			}
+			defer rpt.Flush()
 			data = append(data, config)
-			err = printTmpl(stdout, row, data)
+			err = rpt.Execute(data)
 		}
 		if err != nil {
 			return fmt.Errorf("Error writing OCI-formatted configuration data to standard output: %w", err)
@@ -235,19 +238,12 @@ func (opts *inspectOptions) run(args []string, stdout io.Writer) (retErr error) 
 		}
 		return err
 	}
-	row := "{{range . }}" + report.NormalizeFormat(opts.format) + "{{end}}"
-	data = append(data, outputData)
-	return printTmpl(stdout, row, data)
-}
 
-func printTmpl(stdout io.Writer, row string, data []any) error {
-	t, err := template.New("skopeo inspect").Parse(row)
+	rpt, err = report.New(stdout, "skopeo inspect").Parse(report.OriginUser, opts.format)
 	if err != nil {
 		return err
 	}
-	w := tabwriter.NewWriter(stdout, 8, 2, 2, ' ', 0)
-	if err := t.Execute(w, data); err != nil {
-		return err
-	}
-	return w.Flush()
+	defer rpt.Flush()
+	data = append(data, outputData)
+	return rpt.Execute(data)
 }
