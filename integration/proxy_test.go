@@ -230,7 +230,7 @@ type byteFetch struct {
 }
 
 func runTestGetManifestAndConfig(p *proxy, img string) error {
-	v, err := p.callNoFd("OpenImage", []any{knownNotManifestListedImageX8664})
+	v, err := p.callNoFd("OpenImage", []any{img})
 	if err != nil {
 		return err
 	}
@@ -245,7 +245,7 @@ func runTestGetManifestAndConfig(p *proxy, img string) error {
 	}
 
 	// Also verify the optional path
-	v, err = p.callNoFd("OpenImageOptional", []any{knownNotManifestListedImageX8664})
+	v, err = p.callNoFd("OpenImageOptional", []any{img})
 	if err != nil {
 		return err
 	}

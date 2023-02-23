@@ -128,7 +128,7 @@ func listDockerRepoTags(ctx context.Context, sys *types.SystemContext, opts *tag
 }
 
 // return the tagLists from a docker archive file
-func listDockerArchiveTags(ctx context.Context, sys *types.SystemContext, opts *tagsOptions, userInput string) (repositoryName string, tagListing []string, err error) {
+func listDockerArchiveTags(_ context.Context, sys *types.SystemContext, _ *tagsOptions, userInput string) (repositoryName string, tagListing []string, err error) {
 	ref, err := alltransports.ParseImageName(userInput)
 	if err != nil {
 		return

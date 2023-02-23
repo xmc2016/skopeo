@@ -38,14 +38,13 @@ func (s *skopeoSuite) SetupSuite() {
 }
 
 func (s *skopeoSuite) TearDownSuite() {
-	t := s.T()
 	if s.regV2 != nil {
-		s.regV2.tearDown(t)
+		s.regV2.tearDown()
 	}
 	if s.regV2WithAuth != nil {
 		// cmd := exec.Command("docker", "logout", s.regV2WithAuth)
 		// require.Noerror(t, cmd.Run())
-		s.regV2WithAuth.tearDown(t)
+		s.regV2WithAuth.tearDown()
 	}
 }
 
