@@ -246,5 +246,8 @@ func printTmpl(stdout io.Writer, row string, data []any) error {
 		return err
 	}
 	w := tabwriter.NewWriter(stdout, 8, 2, 2, ' ', 0)
-	return t.Execute(w, data)
+	if err := t.Execute(w, data); err != nil {
+		return err
+	}
+	return w.Flush()
 }
