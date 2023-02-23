@@ -51,8 +51,8 @@ See skopeo(1) section "IMAGE NAMES" for the expected format
 `, strings.Join(transports.ListNames(), ", ")),
 		RunE: commandAction(opts.run),
 		Example: `skopeo inspect docker://registry.fedoraproject.org/fedora
-  skopeo inspect --config docker://docker.io/alpine
-  skopeo inspect  --format "Name: {{.Name}} Digest: {{.Digest}}" docker://registry.access.redhat.com/ubi8`,
+skopeo inspect --config docker://docker.io/alpine
+skopeo inspect --format "Name: {{.Name}} Digest: {{.Digest}}" docker://registry.access.redhat.com/ubi8`,
 		ValidArgsFunction: autocompleteSupportedTransports,
 	}
 	adjustUsage(cmd)
