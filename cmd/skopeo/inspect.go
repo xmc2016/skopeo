@@ -217,12 +217,10 @@ func (opts *inspectOptions) run(args []string, stdout io.Writer) (retErr error) 
 	return opts.writeOutput(stdout, outputData)
 }
 
-// writeOutput writes outputData depending on opts.format to stdout
-func (opts *inspectOptions) writeOutput(stdout io.Writer, outputData any) error {
-	var data []any
-
+// writeOutput writes data depending on opts.format to stdout
+func (opts *inspectOptions) writeOutput(stdout io.Writer, data any) error {
 	if report.IsJSON(opts.format) || opts.format == "" {
-		out, err := json.MarshalIndent(outputData, "", "    ")
+		out, err := json.MarshalIndent(data, "", "    ")
 		if err == nil {
 			fmt.Fprintf(stdout, "%s\n", string(out))
 		}
@@ -234,6 +232,5 @@ func (opts *inspectOptions) writeOutput(stdout io.Writer, outputData any) error 
 		return err
 	}
 	defer rpt.Flush()
-	data = append(data, outputData)
-	return rpt.Execute(data)
+	return rpt.Execute([]any{data})
 }
