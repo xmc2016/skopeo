@@ -72,8 +72,6 @@ func (opts *inspectOptions) run(args []string, stdout io.Writer) (retErr error) 
 		rawManifest []byte
 		src         types.ImageSource
 		imgInspect  *types.ImageInspectInfo
-		rpt         *report.Formatter
-		data        []any
 	)
 	ctx, cancel := opts.global.commandTimeoutContext()
 	defer cancel()
@@ -150,22 +148,7 @@ func (opts *inspectOptions) run(args []string, stdout io.Writer) (retErr error) 
 		}, opts.retryOpts); err != nil {
 			return fmt.Errorf("Error reading OCI-formatted configuration data: %w", err)
 		}
-		if report.IsJSON(opts.format) || opts.format == "" {
-			var out []byte
-			out, err = json.MarshalIndent(config, "", "    ")
-			if err == nil {
-				fmt.Fprintf(stdout, "%s\n", string(out))
-			}
-		} else {
-			rpt, err = report.New(stdout, "skopeo inspect").Parse(report.OriginUser, opts.format)
-			if err != nil {
-				return err
-			}
-			defer rpt.Flush()
-			data = append(data, config)
-			err = rpt.Execute(data)
-		}
-		if err != nil {
+		if err := opts.writeOutput(stdout, config); err != nil {
 			return fmt.Errorf("Error writing OCI-formatted configuration data to standard output: %w", err)
 		}
 		return nil
@@ -231,19 +214,23 @@ func (opts *inspectOptions) run(args []string, stdout io.Writer) (retErr error) 
 			logrus.Warnf("Registry disallows tag list retrieval; skipping")
 		}
 	}
+	return opts.writeOutput(stdout, outputData)
+}
+
+// writeOutput writes data depending on opts.format to stdout
+func (opts *inspectOptions) writeOutput(stdout io.Writer, data any) error {
 	if report.IsJSON(opts.format) || opts.format == "" {
-		out, err := json.MarshalIndent(outputData, "", "    ")
+		out, err := json.MarshalIndent(data, "", "    ")
 		if err == nil {
 			fmt.Fprintf(stdout, "%s\n", string(out))
 		}
 		return err
 	}
 
-	rpt, err = report.New(stdout, "skopeo inspect").Parse(report.OriginUser, opts.format)
+	rpt, err := report.New(stdout, "skopeo inspect").Parse(report.OriginUser, opts.format)
 	if err != nil {
 		return err
 	}
 	defer rpt.Flush()
-	data = append(data, outputData)
-	return rpt.Execute(data)
+	return rpt.Execute([]any{data})
 }
