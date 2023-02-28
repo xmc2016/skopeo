@@ -99,7 +99,7 @@ func runExecCmdWithInput(t *testing.T, cmd *exec.Cmd, input string) {
 	require.NoError(t, err)
 	err = cmd.Start()
 	require.NoError(t, err)
-	_, err = stdin.Write([]byte(input))
+	_, err = io.WriteString(stdin, input)
 	require.NoError(t, err)
 	err = stdin.Close()
 	require.NoError(t, err)
