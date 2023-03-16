@@ -23,10 +23,10 @@ env:
     ####
     #### Cache-image names to test with (double-quotes around names are critical)
     ####
-    FEDORA_NAME: "fedora-37" ### c20230120t152650z-f37f36u2204
+    FEDORA_NAME: "fedora-37"
 
     # Google-cloud VM Images
-    IMAGE_SUFFIX: "c20230120t152650z-f37f36u2204"
+    IMAGE_SUFFIX: "c20230314t204248z-f37f36d12"
     FEDORA_CACHE_IMAGE_NAME: "fedora-${IMAGE_SUFFIX}"
 
     # Container FQIN's
