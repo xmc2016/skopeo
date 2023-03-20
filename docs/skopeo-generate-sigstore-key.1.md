@@ -17,6 +17,8 @@ The private key is written to _prefix_**.pub** .
 
 ## OPTIONS
 
+See also [skopeo(1)](skopeo.1.md) for options placed before the subcommand name.
+
 **--help**, **-h**
 
 Print usage statement

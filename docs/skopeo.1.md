@@ -51,6 +51,9 @@ See [containers-transports(5)](https://github.com/containers/image/blob/main/doc
 
 ## OPTIONS
 
+These options should be placed before the subcommand name.
+Individual subcommands have their own options.
+
 **--command-timeout** _duration_
 
 Timeout for the command execution.

@@ -15,6 +15,8 @@ flag. The default path used is **${XDG\_RUNTIME\_DIR}/containers/auth.json**.
 
 ## OPTIONS
 
+See also [skopeo(1)](skopeo.1.md) for options placed before the subcommand name.
+
 **--password**, **-p**=*password*
 
 Password for registry

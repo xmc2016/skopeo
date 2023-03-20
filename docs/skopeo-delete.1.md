@@ -31,6 +31,8 @@ $ docker exec -it registry /usr/bin/registry garbage-collect /etc/docker-distrib
 
 ## OPTIONS
 
+See also [skopeo(1)](skopeo.1.md) for options placed before the subcommand name.
+
 **--authfile** _path_
 
 Path of the authentication file. Default is ${XDG_RUNTIME\_DIR}/containers/auth.json, which is set using `skopeo login`.

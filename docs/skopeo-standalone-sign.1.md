@@ -17,6 +17,8 @@ This is primarily a debugging tool, useful for special cases, and usually should
 
 ## OPTIONS
 
+See also [skopeo(1)](skopeo.1.md) for options placed before the subcommand name.
+
 **--help**, **-h**
 
 Print usage statement
