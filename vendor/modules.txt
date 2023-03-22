@@ -50,7 +50,7 @@ github.com/containerd/cgroups/stats/v1
 ## explicit; go 1.19
 github.com/containerd/stargz-snapshotter/estargz
 github.com/containerd/stargz-snapshotter/estargz/errorutil
-# github.com/containers/common v0.51.0
+# github.com/containers/common v0.51.1
 ## explicit; go 1.17
 github.com/containers/common/pkg/auth
 github.com/containers/common/pkg/capabilities
