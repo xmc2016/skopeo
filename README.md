@@ -39,6 +39,12 @@ Skopeo works with API V2 container image registries such as [docker.io](https://
  * oci:path:tag
          An image tag in a directory compliant with "Open Container Image Layout Specification" at path.
 
+[Obtaining skopeo](./install.md)
+-
+
+For a detailed description how to install or build skopeo, see
+[install.md](./install.md).
+
 ## Inspecting a repository
 `skopeo` is able to _inspect_ a repository on a container registry and fetch images layers.
 The _inspect_ command fetches the repository's manifest and it is able to show you a `docker inspect`-like
@@ -188,12 +194,6 @@ $ skopeo inspect --creds=testuser:testpassword docker://myregistrydomain.com:500
 ```console
 $ skopeo copy --src-creds=testuser:testpassword docker://myregistrydomain.com:5000/private oci:local_oci_image
 ```
-
-[Obtaining skopeo](./install.md)
--
-
-For a detailed description how to install or build skopeo, see
-[install.md](./install.md).
 
 Contributing
 -
