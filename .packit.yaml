@@ -12,7 +12,8 @@
 specfile_path: skopeo.spec
 
 jobs:
-  - job: copr_build
+  - &copr
+    job: copr_build
     trigger: pull_request
     owner: rhcontainerbot
     project: packit-builds
@@ -25,3 +26,9 @@ jobs:
         - "rpkg spec --outdir ./"
       fix-spec-file:
         - "bash .packit.sh"
+
+  - <<: *copr
+    # Run on commit to main branch
+    trigger: commit
+    branch: main
+    project: podman-next
