@@ -73,7 +73,7 @@ func (s *signingSuite) TestSignVerifySmoke() {
 	assertSkopeoSucceeds(t, "^$", "standalone-sign", "-o", sigOutput.Name(),
 		manifestPath, dockerReference, s.fingerprint)
 
-	expected := fmt.Sprintf("^Signature verified, digest %s\n$", TestImageManifestDigest)
+	expected := fmt.Sprintf("^Signature verified using fingerprint %s, digest %s\n$", s.fingerprint, TestImageManifestDigest)
 	assertSkopeoSucceeds(t, expected, "standalone-verify", manifestPath,
 		dockerReference, s.fingerprint, sigOutput.Name())
 }

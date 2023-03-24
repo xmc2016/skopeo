@@ -16,7 +16,7 @@ as per containers-policy.json(5).
 
   _docker-reference_ A docker reference expected to identify the image in the signature
 
-  _key-fingerprint_ Expected identity of the signing key
+  _key-fingerprint_ Expected identity of the signing key, or "any" to trust any known key
 
   _signature_ Path to signature file
 
@@ -27,6 +27,10 @@ as per containers-policy.json(5).
 **--help**, **-h**
 
 Print usage statement
+
+**--truststore** _truststore_
+
+Trust store of public keys to use when verifying signatures. If this is not specified, keys from gpg home are used.
 
 ## EXAMPLES
 

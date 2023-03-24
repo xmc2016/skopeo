@@ -67,6 +67,7 @@ func (opts *standaloneSignOptions) run(args []string, stdout io.Writer) error {
 }
 
 type standaloneVerifyOptions struct {
+	truststore string
 }
 
 func standaloneVerifyCmd() *cobra.Command {
@@ -74,8 +75,13 @@ func standaloneVerifyCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "standalone-verify MANIFEST DOCKER-REFERENCE KEY-FINGERPRINT SIGNATURE",
 		Short: "Verify a signature using local files",
-		RunE:  commandAction(opts.run),
+		Long: `Verify a signature using local files
+
+KEY-FINGERPRINT can be an exact fingerprint, or "any" if you trust all the keys in the trust store.`,
+		RunE: commandAction(opts.run),
 	}
+	flags := cmd.Flags()
+	flags.StringVar(&opts.truststore, "truststore", "", "Trust store of public keys. Defaults to using local gpg keys.")
 	adjustUsage(cmd)
 	return cmd
 }
@@ -98,17 +104,34 @@ func (opts *standaloneVerifyOptions) run(args []string, stdout io.Writer) error 
 		return fmt.Errorf("Error reading signature from %s: %v", signaturePath, err)
 	}
 
-	mech, err := signature.NewGPGSigningMechanism()
+	var mech signature.SigningMechanism
+	if opts.truststore != "" {
+		truststore, err := os.ReadFile(opts.truststore)
+		if err != nil {
+			return fmt.Errorf("Error reading trust store from %s: %v", opts.truststore, err)
+		}
+		mech, _, err = signature.NewEphemeralGPGSigningMechanism(truststore)
+	} else {
+		mech, err = signature.NewGPGSigningMechanism()
+	}
 	if err != nil {
 		return fmt.Errorf("Error initializing GPG: %v", err)
 	}
 	defer mech.Close()
+
+	if expectedFingerprint == "any" {
+		_, expectedFingerprint, err = mech.Verify(unverifiedSignature)
+		if err != nil {
+			return fmt.Errorf("Could not determine fingerprint from signature: %v", err)
+		}
+	}
+
 	sig, err := signature.VerifyDockerManifestSignature(unverifiedSignature, unverifiedManifest, expectedDockerReference, mech, expectedFingerprint)
 	if err != nil {
 		return fmt.Errorf("Error verifying signature: %v", err)
 	}
 
-	fmt.Fprintf(stdout, "Signature verified, digest %s\n", sig.DockerManifestDigest)
+	fmt.Fprintf(stdout, "Signature verified using fingerprint %s, digest %s\n", expectedFingerprint, sig.DockerManifestDigest)
 	return nil
 }
 
