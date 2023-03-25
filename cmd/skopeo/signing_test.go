@@ -133,15 +133,16 @@ func TestStandaloneVerify(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "Signature verified using fingerprint 1D8230F6CDB6A06716E414C1DB72F2188BB46CC8, digest "+fixturesTestImageManifestDigest.String()+"\n", out)
 
-	// Using any known fingerprint
-	out, err = runSkopeo("standalone-verify", manifestPath,
-		dockerReference, "any", signaturePath)
+	// Using a public key file
+	t.Setenv("GNUPGHOME", "")
+	out, err = runSkopeo("standalone-verify", "--public-key-file", "fixtures/pubring.gpg", manifestPath,
+		dockerReference, fixturesTestKeyFingerprint, signaturePath)
 	assert.NoError(t, err)
 	assert.Equal(t, "Signature verified using fingerprint 1D8230F6CDB6A06716E414C1DB72F2188BB46CC8, digest "+fixturesTestImageManifestDigest.String()+"\n", out)
 
-	// Using a trust store
+	// Using a public key file matching any public key
 	t.Setenv("GNUPGHOME", "")
-	out, err = runSkopeo("standalone-verify", "--truststore", "fixtures/pubring.gpg", manifestPath,
+	out, err = runSkopeo("standalone-verify", "--public-key-file", "fixtures/pubring.gpg", manifestPath,
 		dockerReference, "any", signaturePath)
 	assert.NoError(t, err)
 	assert.Equal(t, "Signature verified using fingerprint 1D8230F6CDB6A06716E414C1DB72F2188BB46CC8, digest "+fixturesTestImageManifestDigest.String()+"\n", out)

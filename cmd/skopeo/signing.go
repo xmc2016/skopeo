@@ -67,7 +67,7 @@ func (opts *standaloneSignOptions) run(args []string, stdout io.Writer) error {
 }
 
 type standaloneVerifyOptions struct {
-	truststore string
+	publickeyfile string
 }
 
 func standaloneVerifyCmd() *cobra.Command {
@@ -77,11 +77,11 @@ func standaloneVerifyCmd() *cobra.Command {
 		Short: "Verify a signature using local files",
 		Long: `Verify a signature using local files
 
-KEY-FINGERPRINT can be an exact fingerprint, or "any" if you trust all the keys in the trust store.`,
+KEY-FINGERPRINT can be an exact fingerprint, or "any" if you trust all the keys in the public key file.`,
 		RunE: commandAction(opts.run),
 	}
 	flags := cmd.Flags()
-	flags.StringVar(&opts.truststore, "truststore", "", "Trust store of public keys. Defaults to using local gpg keys.")
+	flags.StringVar(&opts.publickeyfile, "public-key-file", "", `File containing public keys. If not specified, will use local GPG keys. When using a public key file, you can specify "any" as the fingerprint to trust any key in the public key file.`)
 	adjustUsage(cmd)
 	return cmd
 }
@@ -105,12 +105,13 @@ func (opts *standaloneVerifyOptions) run(args []string, stdout io.Writer) error 
 	}
 
 	var mech signature.SigningMechanism
-	if opts.truststore != "" {
-		truststore, err := os.ReadFile(opts.truststore)
+	var fingerprints []string
+	if opts.publickeyfile != "" {
+		publicKeys, err := os.ReadFile(opts.publickeyfile)
 		if err != nil {
-			return fmt.Errorf("Error reading trust store from %s: %v", opts.truststore, err)
+			return fmt.Errorf("Error reading public keys from %s: %v", opts.publickeyfile, err)
 		}
-		mech, _, err = signature.NewEphemeralGPGSigningMechanism(truststore)
+		mech, fingerprints, err = signature.NewEphemeralGPGSigningMechanism(publicKeys)
 	} else {
 		mech, err = signature.NewGPGSigningMechanism()
 	}
@@ -119,10 +120,20 @@ func (opts *standaloneVerifyOptions) run(args []string, stdout io.Writer) error 
 	}
 	defer mech.Close()
 
-	if expectedFingerprint == "any" {
+	if opts.publickeyfile != "" && expectedFingerprint == "any" {
 		_, expectedFingerprint, err = mech.Verify(unverifiedSignature)
 		if err != nil {
 			return fmt.Errorf("Could not determine fingerprint from signature: %v", err)
+		}
+		found := false
+		for _, fingerprint := range fingerprints {
+			if expectedFingerprint == fingerprint {
+				found = true
+			}
+		}
+		if !found {
+			// This is theoretically impossible because mech.Verify only works if it can identify the key based on the signature
+			return fmt.Errorf("Signature fingerprint not found in public key file: %s", expectedFingerprint)
 		}
 	}
 
