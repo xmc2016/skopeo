@@ -10,6 +10,7 @@ import (
 	"github.com/containers/image/v5/pkg/cli"
 	"github.com/containers/image/v5/signature"
 	"github.com/spf13/cobra"
+	"golang.org/x/exp/slices"
 )
 
 type standaloneSignOptions struct {
@@ -41,12 +42,12 @@ func (opts *standaloneSignOptions) run(args []string, stdout io.Writer) error {
 
 	manifest, err := os.ReadFile(manifestPath)
 	if err != nil {
-		return fmt.Errorf("Error reading %s: %v", manifestPath, err)
+		return fmt.Errorf("Error reading %s: %w", manifestPath, err)
 	}
 
 	mech, err := signature.NewGPGSigningMechanism()
 	if err != nil {
-		return fmt.Errorf("Error initializing GPG: %v", err)
+		return fmt.Errorf("Error initializing GPG: %w", err)
 	}
 	defer mech.Close()
 
@@ -57,17 +58,17 @@ func (opts *standaloneSignOptions) run(args []string, stdout io.Writer) error {
 
 	signature, err := signature.SignDockerManifestWithOptions(manifest, dockerReference, mech, fingerprint, &signature.SignOptions{Passphrase: passphrase})
 	if err != nil {
-		return fmt.Errorf("Error creating signature: %v", err)
+		return fmt.Errorf("Error creating signature: %w", err)
 	}
 
 	if err := os.WriteFile(opts.output, signature, 0644); err != nil {
-		return fmt.Errorf("Error writing signature to %s: %v", opts.output, err)
+		return fmt.Errorf("Error writing signature to %s: %w", opts.output, err)
 	}
 	return nil
 }
 
 type standaloneVerifyOptions struct {
-	publickeyfile string
+	publicKeyFile string
 }
 
 func standaloneVerifyCmd() *cobra.Command {
@@ -81,7 +82,7 @@ KEY-FINGERPRINT can be an exact fingerprint, or "any" if you trust all the keys 
 		RunE: commandAction(opts.run),
 	}
 	flags := cmd.Flags()
-	flags.StringVar(&opts.publickeyfile, "public-key-file", "", `File containing public keys. If not specified, will use local GPG keys. When using a public key file, you can specify "any" as the fingerprint to trust any key in the public key file.`)
+	flags.StringVar(&opts.publicKeyFile, "public-key-file", "", `File containing public keys. If not specified, will use local GPG keys.`)
 	adjustUsage(cmd)
 	return cmd
 }
@@ -95,43 +96,40 @@ func (opts *standaloneVerifyOptions) run(args []string, stdout io.Writer) error 
 	expectedFingerprint := args[2]
 	signaturePath := args[3]
 
+	if opts.publicKeyFile == "" && expectedFingerprint == "any" {
+		return fmt.Errorf("Cannot use any fingerprint without a public key file")
+	}
 	unverifiedManifest, err := os.ReadFile(manifestPath)
 	if err != nil {
-		return fmt.Errorf("Error reading manifest from %s: %v", manifestPath, err)
+		return fmt.Errorf("Error reading manifest from %s: %w", manifestPath, err)
 	}
 	unverifiedSignature, err := os.ReadFile(signaturePath)
 	if err != nil {
-		return fmt.Errorf("Error reading signature from %s: %v", signaturePath, err)
+		return fmt.Errorf("Error reading signature from %s: %w", signaturePath, err)
 	}
 
 	var mech signature.SigningMechanism
 	var fingerprints []string
-	if opts.publickeyfile != "" {
-		publicKeys, err := os.ReadFile(opts.publickeyfile)
+	if opts.publicKeyFile != "" {
+		publicKeys, err := os.ReadFile(opts.publicKeyFile)
 		if err != nil {
-			return fmt.Errorf("Error reading public keys from %s: %v", opts.publickeyfile, err)
+			return fmt.Errorf("Error reading public keys from %s: %w", opts.publicKeyFile, err)
 		}
 		mech, fingerprints, err = signature.NewEphemeralGPGSigningMechanism(publicKeys)
 	} else {
 		mech, err = signature.NewGPGSigningMechanism()
 	}
 	if err != nil {
-		return fmt.Errorf("Error initializing GPG: %v", err)
+		return fmt.Errorf("Error initializing GPG: %w", err)
 	}
 	defer mech.Close()
 
-	if opts.publickeyfile != "" && expectedFingerprint == "any" {
+	if opts.publicKeyFile != "" && expectedFingerprint == "any" {
 		_, expectedFingerprint, err = mech.Verify(unverifiedSignature)
 		if err != nil {
-			return fmt.Errorf("Could not determine fingerprint from signature: %v", err)
+			return fmt.Errorf("Could not determine fingerprint from signature: %w", err)
 		}
-		found := false
-		for _, fingerprint := range fingerprints {
-			if expectedFingerprint == fingerprint {
-				found = true
-			}
-		}
-		if !found {
+		if !slices.Contains(fingerprints, expectedFingerprint) {
 			// This is theoretically impossible because mech.Verify only works if it can identify the key based on the signature
 			return fmt.Errorf("Signature fingerprint not found in public key file: %s", expectedFingerprint)
 		}
@@ -139,7 +137,7 @@ func (opts *standaloneVerifyOptions) run(args []string, stdout io.Writer) error 
 
 	sig, err := signature.VerifyDockerManifestSignature(unverifiedSignature, unverifiedManifest, expectedDockerReference, mech, expectedFingerprint)
 	if err != nil {
-		return fmt.Errorf("Error verifying signature: %v", err)
+		return fmt.Errorf("Error verifying signature: %w", err)
 	}
 
 	fmt.Fprintf(stdout, "Signature verified using fingerprint %s, digest %s\n", expectedFingerprint, sig.DockerManifestDigest)
@@ -175,7 +173,7 @@ func (opts *untrustedSignatureDumpOptions) run(args []string, stdout io.Writer) 
 
 	untrustedSignature, err := os.ReadFile(untrustedSignaturePath)
 	if err != nil {
-		return fmt.Errorf("Error reading untrusted signature from %s: %v", untrustedSignaturePath, err)
+		return fmt.Errorf("Error reading untrusted signature from %s: %w", untrustedSignaturePath, err)
 	}
 
 	untrustedInfo, err := signature.GetUntrustedSignatureInformationWithoutVerifying(untrustedSignature)

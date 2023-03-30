@@ -127,6 +127,11 @@ func TestStandaloneVerify(t *testing.T) {
 		dockerReference, fixturesTestKeyFingerprint, "fixtures/corrupt.signature")
 	assertTestFailed(t, out, err, "Error verifying signature")
 
+	// Error using any without a public key file
+	out, err = runSkopeo("standalone-verify", manifestPath,
+		dockerReference, "any", signaturePath)
+	assertTestFailed(t, out, err, "Cannot use any fingerprint without a public key file")
+
 	// Success
 	out, err = runSkopeo("standalone-verify", manifestPath,
 		dockerReference, fixturesTestKeyFingerprint, signaturePath)
