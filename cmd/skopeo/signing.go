@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/containers/image/v5/pkg/cli"
 	"github.com/containers/image/v5/signature"
 	"github.com/spf13/cobra"
-	"golang.org/x/exp/slices"
 )
 
 type standaloneSignOptions struct {
@@ -74,11 +74,11 @@ type standaloneVerifyOptions struct {
 func standaloneVerifyCmd() *cobra.Command {
 	opts := standaloneVerifyOptions{}
 	cmd := &cobra.Command{
-		Use:   "standalone-verify MANIFEST DOCKER-REFERENCE KEY-FINGERPRINT SIGNATURE",
+		Use:   "standalone-verify MANIFEST DOCKER-REFERENCE KEY-FINGERPRINTS SIGNATURE",
 		Short: "Verify a signature using local files",
 		Long: `Verify a signature using local files
 
-KEY-FINGERPRINT can be an exact fingerprint, or "any" if you trust all the keys in the public key file.`,
+KEY-FINGERPRINTS can be a comma separated list of fingerprints, or "any" if you trust all the keys in the public key file.`,
 		RunE: commandAction(opts.run),
 	}
 	flags := cmd.Flags()
@@ -93,10 +93,10 @@ func (opts *standaloneVerifyOptions) run(args []string, stdout io.Writer) error 
 	}
 	manifestPath := args[0]
 	expectedDockerReference := args[1]
-	expectedFingerprint := args[2]
+	expectedFingerprints := strings.Split(args[2], ",")
 	signaturePath := args[3]
 
-	if opts.publicKeyFile == "" && expectedFingerprint == "any" {
+	if opts.publicKeyFile == "" && len(expectedFingerprints) == 1 && expectedFingerprints[0] == "any" {
 		return fmt.Errorf("Cannot use any fingerprint without a public key file")
 	}
 	unverifiedManifest, err := os.ReadFile(manifestPath)
@@ -109,13 +109,13 @@ func (opts *standaloneVerifyOptions) run(args []string, stdout io.Writer) error 
 	}
 
 	var mech signature.SigningMechanism
-	var fingerprints []string
+	var publicKeyfingerprints []string
 	if opts.publicKeyFile != "" {
 		publicKeys, err := os.ReadFile(opts.publicKeyFile)
 		if err != nil {
 			return fmt.Errorf("Error reading public keys from %s: %w", opts.publicKeyFile, err)
 		}
-		mech, fingerprints, err = signature.NewEphemeralGPGSigningMechanism(publicKeys)
+		mech, publicKeyfingerprints, err = signature.NewEphemeralGPGSigningMechanism(publicKeys)
 	} else {
 		mech, err = signature.NewGPGSigningMechanism()
 	}
@@ -124,23 +124,16 @@ func (opts *standaloneVerifyOptions) run(args []string, stdout io.Writer) error 
 	}
 	defer mech.Close()
 
-	if opts.publicKeyFile != "" && expectedFingerprint == "any" {
-		_, expectedFingerprint, err = mech.Verify(unverifiedSignature)
-		if err != nil {
-			return fmt.Errorf("Could not determine fingerprint from signature: %w", err)
-		}
-		if !slices.Contains(fingerprints, expectedFingerprint) {
-			// This is theoretically impossible because mech.Verify only works if it can identify the key based on the signature
-			return fmt.Errorf("Signature fingerprint not found in public key file: %s", expectedFingerprint)
-		}
+	if len(expectedFingerprints) == 1 && expectedFingerprints[0] == "any" {
+		expectedFingerprints = publicKeyfingerprints
 	}
 
-	sig, err := signature.VerifyDockerManifestSignature(unverifiedSignature, unverifiedManifest, expectedDockerReference, mech, expectedFingerprint)
+	sig, verificationFingerprint, err := signature.VerifyImageManifestSignatureUsingKeyIdentityList(unverifiedSignature, unverifiedManifest, expectedDockerReference, mech, expectedFingerprints)
 	if err != nil {
 		return fmt.Errorf("Error verifying signature: %w", err)
 	}
 
-	fmt.Fprintf(stdout, "Signature verified using fingerprint %s, digest %s\n", expectedFingerprint, sig.DockerManifestDigest)
+	fmt.Fprintf(stdout, "Signature verified using fingerprint %s, digest %s\n", verificationFingerprint, sig.DockerManifestDigest)
 	return nil
 }
 
