@@ -1,12 +1,15 @@
 package mpb
 
-// A priorityQueue implements heap.Interface
+import "container/heap"
+
+var _ heap.Interface = (*priorityQueue)(nil)
+
 type priorityQueue []*Bar
 
 func (pq priorityQueue) Len() int { return len(pq) }
 
 func (pq priorityQueue) Less(i, j int) bool {
-	// less priority pops first
+	// greater priority pops first
 	return pq[i].priority > pq[j].priority
 }
 

@@ -11,15 +11,14 @@ import (
 type BarOption func(*bState)
 
 func inspect(decorators []decor.Decorator) (dest []decor.Decorator) {
-	type mergeWrapper interface {
-		MergeUnwrap() []decor.Decorator
-	}
 	for _, decorator := range decorators {
 		if decorator == nil {
 			continue
 		}
-		if mw, ok := decorator.(mergeWrapper); ok {
-			dest = append(dest, mw.MergeUnwrap()...)
+		if d, ok := decorator.(interface {
+			PlaceHolders() []decor.Decorator
+		}); ok {
+			dest = append(dest, d.PlaceHolders()...)
 		}
 		dest = append(dest, decorator)
 	}
@@ -59,15 +58,9 @@ func BarWidth(width int) BarOption {
 // BarQueueAfter puts this (being constructed) bar into the queue.
 // BarPriority will be inherited from the argument bar.
 // When argument bar completes or aborts queued bar replaces its place.
-// If sync is true queued bar is suspended until argument bar completes
-// or aborts.
-func BarQueueAfter(bar *Bar, sync bool) BarOption {
-	if bar == nil {
-		return nil
-	}
+func BarQueueAfter(bar *Bar) BarOption {
 	return func(s *bState) {
-		s.wait.bar = bar
-		s.wait.sync = sync
+		s.waitBar = bar
 	}
 }
 
@@ -75,7 +68,7 @@ func BarQueueAfter(bar *Bar, sync bool) BarOption {
 // on complete event.
 func BarRemoveOnComplete() BarOption {
 	return func(s *bState) {
-		s.dropOnComplete = true
+		s.rmOnComplete = true
 	}
 }
 
@@ -101,7 +94,10 @@ func BarFillerOnComplete(message string) BarOption {
 // BarFillerMiddleware provides a way to augment the underlying BarFiller.
 func BarFillerMiddleware(middle func(BarFiller) BarFiller) BarOption {
 	return func(s *bState) {
-		s.middleware = middle
+		if middle == nil {
+			return
+		}
+		s.filler = middle(s.filler)
 	}
 }
 
