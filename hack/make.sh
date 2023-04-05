@@ -20,7 +20,6 @@ set -o pipefail
 
 export SKOPEO_PKG='github.com/containers/skopeo'
 export SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-export MAKEDIR="$SCRIPTDIR/make"
 
 # Set this to 1 to enable installation/modification of environment/services
 export SKOPEO_CONTAINER_TESTS=${SKOPEO_CONTAINER_TESTS:-0}
@@ -39,19 +38,6 @@ fi
 
 echo
 
-# List of bundles to create when no argument is passed
-# TODO(runcom): these are the one left from Docker...for now
-# test-unit
-# validate-dco
-# cover
-DEFAULT_BUNDLES=(
-	validate-gofmt
-	validate-lint
-	validate-vet
-	validate-git-marks
-
-	test-integration
-)
 
 # Go module support: set `-mod=vendor` to use the vendored sources
 # See also the top-level Makefile.
@@ -66,7 +52,6 @@ go_test_dir() {
 	(
 		echo '+ go test' $mod_vendor $TESTFLAGS ${BUILDTAGS:+-tags "$BUILDTAGS"} "${SKOPEO_PKG}${dir#.}"
 		cd "$dir"
-		export DEST="$ABS_DEST" # we're in a subshell, so this is safe -- our integration-cli tests need DEST, and "cd" screws it up
 		go test $mod_vendor $TESTFLAGS ${BUILDTAGS:+-tags "$BUILDTAGS"}
 	)
 }
@@ -79,11 +64,10 @@ bundle() {
 
 main() {
 	if [ $# -lt 1 ]; then
-		bundles=(${DEFAULT_BUNDLES[@]})
-	else
-		bundles=($@)
+		echo 'At least one "bundle" argument expected' >&2
+		return 1
 	fi
-	for bundle in ${bundles[@]}; do
+	for bundle in $@; do
 		bundle "$bundle"
 		echo
 	done
