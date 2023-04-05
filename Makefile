@@ -223,7 +223,8 @@ test-all-local: validate-local validate-docs test-unit-local
 
 .PHONY: validate-local
 validate-local:
-	BUILDTAGS="${BUILDTAGS}" hack/make.sh validate-git-marks validate-gofmt validate-lint validate-vet
+	BUILDTAGS="${BUILDTAGS}" hack/make.sh validate-git-marks validate-gofmt validate-lint
+	BUILDTAGS="${BUILDTAGS}" hack/validate-vet.sh
 
 # This invokes bin/skopeo, hence cannot be run as part of validate-local
 .PHONY: validate-docs
