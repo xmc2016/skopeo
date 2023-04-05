@@ -1,7 +1,0 @@
-#!/bin/bash
-set -e
-
-(
-	make PREFIX=/usr install
-	go_test_dir ./integration
-) 2>&1

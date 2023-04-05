@@ -193,7 +193,8 @@ test-integration:
 
 # Intended for CI, assumed to be running in quay.io/libpod/skopeo_cidev container.
 test-integration-local: bin/skopeo
-	hack/make.sh test-integration
+	hack/warn-destructive-tests.sh
+	hack/test-integration.sh
 
 # complicated set of options needed to run podman-in-podman
 test-system:
@@ -209,7 +210,8 @@ test-system:
 
 # Intended for CI, assumed to already be running in quay.io/libpod/skopeo_cidev container.
 test-system-local: bin/skopeo
-	hack/make.sh test-system
+	hack/warn-destructive-tests.sh
+	hack/test-system.sh
 
 test-unit:
 	# Just call (make test unit-local) here instead of worrying about environment differences
