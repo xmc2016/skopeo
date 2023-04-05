@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
 
-source "$(dirname "$BASH_SOURCE")/.validate"
-
-# folders=$(find * -type d | egrep -v '^Godeps|bundles|.git')
-
 IFS=$'\n'
-files=( $(validate_diff --diff-filter=ACMR --name-only -- '*' | grep -v '^vendor/' || true) )
+files=( $(git ls-tree -r HEAD --name-only | grep -v '^vendor/' || true) )
 unset IFS
 
 badFiles=()
