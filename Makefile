@@ -38,13 +38,6 @@ endif
 export CONTAINER_RUNTIME ?= $(if $(shell command -v podman ;),podman,docker)
 GOMD2MAN ?= $(if $(shell command -v go-md2man ;),go-md2man,$(GOBIN)/go-md2man)
 
-# Go module support: set `-mod=vendor` to use the vendored sources.
-# See also hack/make.sh.
-ifeq ($(shell go help mod >/dev/null 2>&1 && echo true), true)
-  GO:=GO111MODULE=on $(GO)
-  MOD_VENDOR=-mod=vendor
-endif
-
 ifeq ($(DEBUG), 1)
   override GOGCFLAGS += -N -l
 endif
@@ -133,9 +126,9 @@ binary: cmd/skopeo
 # Build w/o using containers
 .PHONY: bin/skopeo
 bin/skopeo:
-	$(GO) build $(MOD_VENDOR) ${GO_DYN_FLAGS} ${SKOPEO_LDFLAGS} -gcflags "$(GOGCFLAGS)" -tags "$(BUILDTAGS)" -o $@ ./cmd/skopeo
+	$(GO) build ${GO_DYN_FLAGS} ${SKOPEO_LDFLAGS} -gcflags "$(GOGCFLAGS)" -tags "$(BUILDTAGS)" -o $@ ./cmd/skopeo
 bin/skopeo.%:
-	GOOS=$(word 2,$(subst ., ,$@)) GOARCH=$(word 3,$(subst ., ,$@)) $(GO) build $(MOD_VENDOR) ${SKOPEO_LDFLAGS} -tags "containers_image_openpgp $(BUILDTAGS)" -o $@ ./cmd/skopeo
+	GOOS=$(word 2,$(subst ., ,$@)) GOARCH=$(word 3,$(subst ., ,$@)) $(GO) build ${SKOPEO_LDFLAGS} -tags "containers_image_openpgp $(BUILDTAGS)" -o $@ ./cmd/skopeo
 local-cross: bin/skopeo.darwin.amd64 bin/skopeo.linux.arm bin/skopeo.linux.arm64 bin/skopeo.windows.386.exe bin/skopeo.windows.amd64.exe
 
 $(MANPAGES): %: %.md
@@ -239,7 +232,7 @@ validate-docs: bin/skopeo
 	hack/xref-helpmsgs-manpages
 
 test-unit-local:
-	$(GO) test $(MOD_VENDOR) -tags "$(BUILDTAGS)" $$($(GO) list $(MOD_VENDOR) -tags "$(BUILDTAGS)" -e ./... | grep -v '^github\.com/containers/skopeo/\(integration\|vendor/.*\)$$')
+	$(GO) test -tags "$(BUILDTAGS)" $$($(GO) list -tags "$(BUILDTAGS)" -e ./... | grep -v '^github\.com/containers/skopeo/\(integration\|vendor/.*\)$$')
 
 vendor:
 	$(GO) mod tidy

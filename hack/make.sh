@@ -38,21 +38,12 @@ fi
 
 echo
 
-
-# Go module support: set `-mod=vendor` to use the vendored sources
-# See also the top-level Makefile.
-mod_vendor=
-if go help mod >/dev/null 2>&1; then
-  export GO111MODULE=on
-  mod_vendor='-mod=vendor'
-fi
-
 go_test_dir() {
 	dir=$1
 	(
-		echo '+ go test' $mod_vendor $TESTFLAGS ${BUILDTAGS:+-tags "$BUILDTAGS"} "${SKOPEO_PKG}${dir#.}"
+		echo '+ go test' $TESTFLAGS ${BUILDTAGS:+-tags "$BUILDTAGS"} "${SKOPEO_PKG}${dir#.}"
 		cd "$dir"
-		go test $mod_vendor $TESTFLAGS ${BUILDTAGS:+-tags "$BUILDTAGS"}
+		go test $TESTFLAGS ${BUILDTAGS:+-tags "$BUILDTAGS"}
 	)
 }
 
