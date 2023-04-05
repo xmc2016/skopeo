@@ -234,11 +234,11 @@ validate-local:
 
 # This invokes bin/skopeo, hence cannot be run as part of validate-local
 .PHONY: validate-docs
-validate-docs:
+validate-docs: bin/skopeo
 	hack/man-page-checker
 	hack/xref-helpmsgs-manpages
 
-test-unit-local: bin/skopeo
+test-unit-local:
 	$(GO) test $(MOD_VENDOR) -tags "$(BUILDTAGS)" $$($(GO) list $(MOD_VENDOR) -tags "$(BUILDTAGS)" -e ./... | grep -v '^github\.com/containers/skopeo/\(integration\|vendor/.*\)$$')
 
 vendor:
