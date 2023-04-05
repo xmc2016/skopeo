@@ -24,5 +24,5 @@ else
 		echo 'Please fix the above errors. You can test via "golint" and commit the result.'
 		echo
 	} >&2
-	false
+	exit 1
 fi
