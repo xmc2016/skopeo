@@ -36,5 +36,5 @@ else
 		echo 'Please fix the conflict(s) commit the result.'
 		echo
 	} >&2
-	false
+	exit 1
 fi
