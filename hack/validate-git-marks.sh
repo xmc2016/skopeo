@@ -6,17 +6,7 @@ unset IFS
 
 badFiles=()
 for f in "${files[@]}"; do
-    if [ $(grep -r "^<<<<<<<" $f) ]; then
-        badFiles+=( "$f" )
-        continue
-    fi
-
-    if [ $(grep -r "^>>>>>>>" $f) ]; then
-        badFiles+=( "$f" )
-        continue
-    fi
-
-    if [ $(grep -r "^=======$" $f) ]; then
+    if [ $(grep -r "^\(<<<<<<<\|>>>>>>>\|^=======$\)" $f) ]; then
         badFiles+=( "$f" )
         continue
     fi
