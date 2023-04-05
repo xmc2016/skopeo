@@ -1,6 +1,6 @@
 #!/bin/bash
 
-errors=$(go vet -tags="${BUILDTAGS}" $(go list -e ./...))
+errors=$(go vet -tags="${BUILDTAGS}" ./...)
 
 if [ -z "$errors" ]; then
 	echo 'Congratulations!  All Go source files have been vetted.'
