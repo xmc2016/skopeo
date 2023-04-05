@@ -127,11 +127,36 @@ func TestStandaloneVerify(t *testing.T) {
 		dockerReference, fixturesTestKeyFingerprint, "fixtures/corrupt.signature")
 	assertTestFailed(t, out, err, "Error verifying signature")
 
+	// Error using any without a public key file
+	out, err = runSkopeo("standalone-verify", manifestPath,
+		dockerReference, "any", signaturePath)
+	assertTestFailed(t, out, err, "Cannot use any fingerprint without a public key file")
+
 	// Success
 	out, err = runSkopeo("standalone-verify", manifestPath,
 		dockerReference, fixturesTestKeyFingerprint, signaturePath)
 	assert.NoError(t, err)
-	assert.Equal(t, "Signature verified, digest "+fixturesTestImageManifestDigest.String()+"\n", out)
+	assert.Equal(t, "Signature verified using fingerprint "+fixturesTestKeyFingerprint+", digest "+fixturesTestImageManifestDigest.String()+"\n", out)
+
+	// Using multiple fingerprints
+	out, err = runSkopeo("standalone-verify", manifestPath,
+		dockerReference, "0123456789ABCDEF0123456789ABCDEF01234567,"+fixturesTestKeyFingerprint+",DEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF", signaturePath)
+	assert.NoError(t, err)
+	assert.Equal(t, "Signature verified using fingerprint "+fixturesTestKeyFingerprint+", digest "+fixturesTestImageManifestDigest.String()+"\n", out)
+
+	// Using a public key file
+	t.Setenv("GNUPGHOME", "")
+	out, err = runSkopeo("standalone-verify", "--public-key-file", "fixtures/pubring.gpg", manifestPath,
+		dockerReference, fixturesTestKeyFingerprint, signaturePath)
+	assert.NoError(t, err)
+	assert.Equal(t, "Signature verified using fingerprint "+fixturesTestKeyFingerprint+", digest "+fixturesTestImageManifestDigest.String()+"\n", out)
+
+	// Using a public key file matching any public key
+	t.Setenv("GNUPGHOME", "")
+	out, err = runSkopeo("standalone-verify", "--public-key-file", "fixtures/pubring.gpg", manifestPath,
+		dockerReference, "any", signaturePath)
+	assert.NoError(t, err)
+	assert.Equal(t, "Signature verified using fingerprint "+fixturesTestKeyFingerprint+", digest "+fixturesTestImageManifestDigest.String()+"\n", out)
 }
 
 func TestUntrustedSignatureDump(t *testing.T) {

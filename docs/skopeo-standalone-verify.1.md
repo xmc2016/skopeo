@@ -4,7 +4,7 @@
 skopeo\-standalone\-verify - Verify an image signature.
 
 ## SYNOPSIS
-**skopeo standalone-verify** _manifest_ _docker-reference_ _key-fingerprint_ _signature_
+**skopeo standalone-verify** _manifest_ _docker-reference_ _key-fingerprints_ _signature_
 
 ## DESCRIPTION
 
@@ -16,7 +16,7 @@ as per containers-policy.json(5).
 
   _docker-reference_ A docker reference expected to identify the image in the signature
 
-  _key-fingerprint_ Expected identity of the signing key
+  _key-fingerprints_ Identities of trusted signing keys (comma separated), or "any" to trust any known key when using a public key file
 
   _signature_ Path to signature file
 
@@ -27,6 +27,10 @@ as per containers-policy.json(5).
 **--help**, **-h**
 
 Print usage statement
+
+**--public-key-file** _public key file_
+
+File containing the public keys to use when verifying signatures. If this is not specified, keys from the GPG homedir are used.
 
 ## EXAMPLES
 

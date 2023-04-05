@@ -242,7 +242,7 @@ END_TESTS
                $fingerprint \
                $TESTDIR/busybox.signature
     # manifest digest
-    digest=$(echo "$output" | awk '{print $4;}')
+    digest=$(echo "$output" | awk '{print $NF;}')
     run_skopeo manifest-digest $TESTDIR/busybox/manifest.json
     expect_output $digest
 }
