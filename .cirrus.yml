@@ -53,6 +53,7 @@ validate_task:
         cpu: 4
         memory: 8
     script: |
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.52.2
         make validate-local
         make vendor && hack/tree_status.sh
 
@@ -91,7 +92,7 @@ osx_task:
         export PATH=$GOPATH/bin:$PATH
         brew update
         brew install gpgme go go-md2man
-        go install golang.org/x/lint/golint@latest
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.52.2
     test_script: |
         export PATH=$GOPATH/bin:$PATH
         go version

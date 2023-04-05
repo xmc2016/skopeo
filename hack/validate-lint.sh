@@ -1,27 +1,15 @@
 #!/bin/bash
 
-IFS=$'\n'
-files=( $(find . -name '*.go' | grep -v '^\./vendor/' | sort || true) )
-unset IFS
+errors=$($GOBIN/golangci-lint run --build-tags "${BUILDTAGS}" 2>&1)
 
-errors=()
-for f in "${files[@]}"; do
-	failedLint=$(golint "$f")
-	if [ "$failedLint" ]; then
-		errors+=( "$failedLint" )
-	fi
-done
-
-if [ ${#errors[@]} -eq 0 ]; then
+if [ -z "$errors" ]; then
 	echo 'Congratulations!  All Go source files have been linted.'
 else
 	{
-		echo "Errors from golint:"
-		for err in "${errors[@]}"; do
-			echo "$err"
-		done
+		echo "Errors from golangci-lint:"
+		echo "$errors"
 		echo
-		echo 'Please fix the above errors. You can test via "golint" and commit the result.'
+		echo 'Please fix the above errors. You can test via "golangci-lint" and commit the result.'
 		echo
 	} >&2
 	exit 1
