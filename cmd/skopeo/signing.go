@@ -116,11 +116,15 @@ func (opts *standaloneVerifyOptions) run(args []string, stdout io.Writer) error 
 			return fmt.Errorf("Error reading public keys from %s: %w", opts.publicKeyFile, err)
 		}
 		mech, publicKeyfingerprints, err = signature.NewEphemeralGPGSigningMechanism(publicKeys)
+		if err != nil {
+			return fmt.Errorf("Error initializing GPG: %w", err)
+
+		}
 	} else {
 		mech, err = signature.NewGPGSigningMechanism()
-	}
-	if err != nil {
-		return fmt.Errorf("Error initializing GPG: %w", err)
+		if err != nil {
+			return fmt.Errorf("Error initializing GPG: %w", err)
+		}
 	}
 	defer mech.Close()
 
