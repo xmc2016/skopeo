@@ -223,7 +223,8 @@ test-all-local: validate-local validate-docs test-unit-local
 
 .PHONY: validate-local
 validate-local:
-	BUILDTAGS="${BUILDTAGS}" hack/make.sh validate-git-marks validate-gofmt
+	BUILDTAGS="${BUILDTAGS}" hack/make.sh validate-git-marks
+	hack/validate-gofmt.sh
 	hack/validate-lint.sh
 	BUILDTAGS="${BUILDTAGS}" hack/validate-vet.sh
 

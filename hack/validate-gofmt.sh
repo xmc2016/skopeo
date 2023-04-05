@@ -23,5 +23,5 @@ else
 		echo 'Please reformat the above files using "gofmt -s -w" and commit the result.'
 		echo
 	} >&2
-	false
+	exit 1
 fi
