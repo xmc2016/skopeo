@@ -181,6 +181,11 @@ install-completions: completions
 shell:
 	$(CONTAINER_RUN) bash
 
+tools:
+	if [ ! -x "$(GOBIN)/golangci-lint" ]; then \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) v1.52.2 ; \
+	fi
+
 check: validate test-unit test-integration test-system
 
 test-integration:
