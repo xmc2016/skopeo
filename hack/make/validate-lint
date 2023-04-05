@@ -1,12 +1,7 @@
 #!/bin/bash
 
-source "$(dirname "$BASH_SOURCE")/.validate"
-
-# We will eventually get to the point where packages should be the complete list
-# of subpackages, vendoring excluded, as given by:
-#
 IFS=$'\n'
-files=( $(validate_diff --diff-filter=ACMR --name-only -- '*.go' | grep -v '^vendor/\|^integration' || true) )
+files=( $(find . -name '*.go' | grep -v '^\./vendor/' | sort || true) )
 unset IFS
 
 errors=()
