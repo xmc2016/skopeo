@@ -52,7 +52,9 @@ validate_task:
         image: '${SKOPEO_CIDEV_CONTAINER_FQIN}'
         cpu: 4
         memory: 8
-    script: |
+    setup_script: |
+        make tools
+    test_script: |
         make validate-local
         make vendor && hack/tree_status.sh
 
@@ -91,7 +93,7 @@ osx_task:
         export PATH=$GOPATH/bin:$PATH
         brew update
         brew install gpgme go go-md2man
-        go install golang.org/x/lint/golint@latest
+        make tools
     test_script: |
         export PATH=$GOPATH/bin:$PATH
         go version

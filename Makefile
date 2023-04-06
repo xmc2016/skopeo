@@ -38,13 +38,6 @@ endif
 export CONTAINER_RUNTIME ?= $(if $(shell command -v podman ;),podman,docker)
 GOMD2MAN ?= $(if $(shell command -v go-md2man ;),go-md2man,$(GOBIN)/go-md2man)
 
-# Go module support: set `-mod=vendor` to use the vendored sources.
-# See also hack/make.sh.
-ifeq ($(shell go help mod >/dev/null 2>&1 && echo true), true)
-  GO:=GO111MODULE=on $(GO)
-  MOD_VENDOR=-mod=vendor
-endif
-
 ifeq ($(DEBUG), 1)
   override GOGCFLAGS += -N -l
 endif
@@ -133,9 +126,9 @@ binary: cmd/skopeo
 # Build w/o using containers
 .PHONY: bin/skopeo
 bin/skopeo:
-	$(GO) build $(MOD_VENDOR) ${GO_DYN_FLAGS} ${SKOPEO_LDFLAGS} -gcflags "$(GOGCFLAGS)" -tags "$(BUILDTAGS)" -o $@ ./cmd/skopeo
+	$(GO) build ${GO_DYN_FLAGS} ${SKOPEO_LDFLAGS} -gcflags "$(GOGCFLAGS)" -tags "$(BUILDTAGS)" -o $@ ./cmd/skopeo
 bin/skopeo.%:
-	GOOS=$(word 2,$(subst ., ,$@)) GOARCH=$(word 3,$(subst ., ,$@)) $(GO) build $(MOD_VENDOR) ${SKOPEO_LDFLAGS} -tags "containers_image_openpgp $(BUILDTAGS)" -o $@ ./cmd/skopeo
+	GOOS=$(word 2,$(subst ., ,$@)) GOARCH=$(word 3,$(subst ., ,$@)) $(GO) build ${SKOPEO_LDFLAGS} -tags "containers_image_openpgp $(BUILDTAGS)" -o $@ ./cmd/skopeo
 local-cross: bin/skopeo.darwin.amd64 bin/skopeo.linux.arm bin/skopeo.linux.arm64 bin/skopeo.windows.386.exe bin/skopeo.windows.amd64.exe
 
 $(MANPAGES): %: %.md
@@ -188,6 +181,11 @@ install-completions: completions
 shell:
 	$(CONTAINER_RUN) bash
 
+tools:
+	if [ ! -x "$(GOBIN)/golangci-lint" ]; then \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) v1.52.2 ; \
+	fi
+
 check: validate test-unit test-integration test-system
 
 test-integration:
@@ -200,7 +198,8 @@ test-integration:
 
 # Intended for CI, assumed to be running in quay.io/libpod/skopeo_cidev container.
 test-integration-local: bin/skopeo
-	hack/make.sh test-integration
+	hack/warn-destructive-tests.sh
+	hack/test-integration.sh
 
 # complicated set of options needed to run podman-in-podman
 test-system:
@@ -216,7 +215,8 @@ test-system:
 
 # Intended for CI, assumed to already be running in quay.io/libpod/skopeo_cidev container.
 test-system-local: bin/skopeo
-	hack/make.sh test-system
+	hack/warn-destructive-tests.sh
+	hack/test-system.sh
 
 test-unit:
 	# Just call (make test unit-local) here instead of worrying about environment differences
@@ -230,16 +230,19 @@ test-all-local: validate-local validate-docs test-unit-local
 
 .PHONY: validate-local
 validate-local:
-	BUILDTAGS="${BUILDTAGS}" hack/make.sh validate-git-marks validate-gofmt validate-lint validate-vet
+	hack/validate-git-marks.sh
+	hack/validate-gofmt.sh
+	GOBIN=$(GOBIN) hack/validate-lint.sh
+	BUILDTAGS="${BUILDTAGS}" hack/validate-vet.sh
 
 # This invokes bin/skopeo, hence cannot be run as part of validate-local
 .PHONY: validate-docs
-validate-docs:
+validate-docs: bin/skopeo
 	hack/man-page-checker
 	hack/xref-helpmsgs-manpages
 
-test-unit-local: bin/skopeo
-	$(GO) test $(MOD_VENDOR) -tags "$(BUILDTAGS)" $$($(GO) list $(MOD_VENDOR) -tags "$(BUILDTAGS)" -e ./... | grep -v '^github\.com/containers/skopeo/\(integration\|vendor/.*\)$$')
+test-unit-local:
+	$(GO) test -tags "$(BUILDTAGS)" $$($(GO) list -tags "$(BUILDTAGS)" -e ./... | grep -v '^github\.com/containers/skopeo/\(integration\|vendor/.*\)$$')
 
 vendor:
 	$(GO) mod tidy

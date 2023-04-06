@@ -1,9 +1,7 @@
 #!/bin/bash
 
-source "$(dirname "$BASH_SOURCE")/.validate"
-
 IFS=$'\n'
-files=( $(validate_diff --diff-filter=ACMR --name-only -- '*.go' | grep -v '^vendor/' || true) )
+files=( $(find . -name '*.go' | grep -v '^./vendor/' | sort || true) )
 unset IFS
 
 badFiles=()
@@ -25,5 +23,5 @@ else
 		echo 'Please reformat the above files using "gofmt -s -w" and commit the result.'
 		echo
 	} >&2
-	false
+	exit 1
 fi

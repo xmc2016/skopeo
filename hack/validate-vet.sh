@@ -1,6 +1,6 @@
 #!/bin/bash
 
-errors=$(go vet -tags="${BUILDTAGS}" $mod_vendor $(go list $mod_vendor -e ./...))
+errors=$(go vet -tags="${BUILDTAGS}" ./... 2>&1)
 
 if [ -z "$errors" ]; then
 	echo 'Congratulations!  All Go source files have been vetted.'
@@ -12,5 +12,5 @@ else
 		echo 'Please fix the above errors. You can test via "go vet" and commit the result.'
 		echo
 	} >&2
-	false
+	exit 1
 fi
