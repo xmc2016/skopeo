@@ -6,7 +6,7 @@ require (
 	github.com/containers/common v0.51.2
 	github.com/containers/image/v5 v5.25.0
 	github.com/containers/ocicrypt v1.1.7
-	github.com/containers/storage v1.46.0
+	github.com/containers/storage v1.46.1
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
@@ -72,7 +72,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.16.3 // indirect
+	github.com/klauspost/compress v1.16.4 // indirect
 	github.com/klauspost/pgzip v1.2.6-0.20220930104621-17e8dac29df8 // indirect
 	github.com/leodido/go-urn v1.2.2 // indirect
 	github.com/letsencrypt/boulder v0.0.0-20230213213521-fdfea0d469b6 // indirect
