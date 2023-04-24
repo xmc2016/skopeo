@@ -235,15 +235,8 @@ There have been efforts in the past to produce and maintain static builds, but t
 
 That being said, if you would like to build Skopeo statically, you might be able to do it by combining all the following steps.
 - Export environment variable `CGO_ENABLED=0` (disabling CGO causes Go to prefer native libraries when possible, instead of dynamically linking against system libraries).
-- Set the `BUILDTAGS=containers_image_openpgp` Make variable (this remove the dependency on `libgpgme` and its companion libraries).
-- Clear the `GO_DYN_FLAGS` Make variable (which otherwise seems to force the creation of a dynamic executable).
-
-The following command implements these steps to produce a static binary in the `bin` subdirectory of the repository:
-
-```bash
-docker run -v $PWD:/src -w /src -e CGO_ENABLED=0 golang \
-make BUILDTAGS=containers_image_openpgp GO_DYN_FLAGS=
-```
+- Set the `BUILDTAGS=containers_image_openpgp` Make variable (this removes the dependency on `libgpgme` and its companion libraries).
+- Clear the `GO_DYN_FLAGS` Make variable if even a dependency on the ELF interpreter is undesirable.
 
 Keep in mind that the resulting binary is unsupported and might crash randomly. Only use if you know what you're doing!
 
