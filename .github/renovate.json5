@@ -49,11 +49,4 @@
   /*************************************************
    *** Repository-specific configuration options ***
    *************************************************/
-
-  // Don't leave dep. update. PRs "hanging", assign them to people.
-  "assignees": ["containers/image-maintainers"],  // same for skopeo
-
-  /*************************************************
-   ***** Golang-specific configuration options *****
-   *************************************************/
 }
