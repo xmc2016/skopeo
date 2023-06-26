@@ -9,55 +9,27 @@
 
 # RHEL 8's default %%gobuild macro doesn't account for the BUILDTAGS variable, so we
 # set it separately here and do not depend on RHEL 8's go-srpm-macros package.
-%if !0%{?fedora} && 0%{?rhel} <= 8
+%if %{defined rhel} && 0%{?rhel} == 8
 %define gobuild(o:) go build -buildmode pie -compiler gc -tags="rpm_crashtraceback libtrust_openssl ${BUILDTAGS:-}" -ldflags "-linkmode=external -compressdwarf=false ${LDFLAGS:-} -B 0x$(head -c20 /dev/urandom|od -An -tx1|tr -d ' \\n') -extldflags '%__global_ldflags'" -a -v -x %{?**};
 %endif
 
 %global gomodulesmode GO111MODULE=on
 
-# NOTE: For conditionals %%bcond_with and %%bcond_without,
-# See: https://rpm-software-management.github.io/rpm/manual/conditionalbuilds.html
-
-# copr_username is only set on copr environments, not on others like koji
-%if "%{?copr_username}" != "rhcontainerbot"
-%bcond_with copr
-%else
-%bcond_without copr
-%endif
-
-%if 0%{?rhel}
-%bcond_with btrfs
-%else
-%bcond_without btrfs
-%endif
-
-# go-rpm-macros package and autochangelog exists for fedora and rhel9
-%if 0%{?fedora} || 0%{?rhel} >= 9
-%bcond_without go_rpm_macros
-%bcond_without manual_changelog
-%else
-%bcond_with go_rpm_macros
-%bcond_without manual_changelog
+# No btrfs on RHEL
+%if %{defined fedora}
+%define build_with_btrfs 1
 %endif
 
 # Only used in official koji builds
 # Copr builds set a separate epoch for all environments
-%if 0%{?fedora} && ! 0%{?rhel}
+%if %{defined fedora}
 %define conditional_epoch 1
 %else
 %define conditional_epoch 2
 %endif
 
-%global provider github
-%global provider_tld com
-%global project containers
-%global repo skopeo
-# https://github.com/containers/skopeo
-%global import_path %{provider}.%{provider_tld}/%{project}/%{repo}
-%global git0 https://%{import_path}
-
-Name: %{repo}
-%if %{with copr}
+Name: skopeo
+%if %{defined copr_username}
 Epoch: 102
 %else
 Epoch: %{conditional_epoch}
@@ -77,16 +49,16 @@ ExclusiveArch: %{golang_arches_future}
 ExclusiveArch: aarch64 ppc64le s390x x86_64
 %endif
 Summary: Inspect container images and repositories on registries
-URL: %{git0}
+URL: https://github.com/containers/%{name}
 # Tarball fetched from upstream
 Source0: %{url}/archive/v%{version}.tar.gz
 BuildRequires: go-md2man
-%if %{with btrfs}
+%if %{defined build_with_btrfs}
 BuildRequires: btrfs-progs-devel
 %endif
 BuildRequires: git-core
 BuildRequires: golang
-%if %{with go_rpm_macros}
+%if !%{defined gobuild}
 BuildRequires: go-rpm-macros
 %endif
 BuildRequires: gpgme-devel
@@ -146,7 +118,7 @@ export CGO_CFLAGS="$CGO_CFLAGS -m64 -mtune=generic -fcf-protection=full"
 %endif
 
 BASEBUILDTAGS="$(hack/libdm_tag.sh) $(hack/libsubid_tag.sh)"
-%if %{with btrfs}
+%if %{defined build_with_btrfs}
 export BUILDTAGS="$BASEBUILDTAGS $(hack/btrfs_tag.sh) $(hack/btrfs_installed_tag.sh)"
 %else
 export BUILDTAGS="$BASEBUILDTAGS btrfs_noversion exclude_graphdriver_btrfs"
@@ -189,12 +161,12 @@ cp -pav systemtest/* %{buildroot}/%{_datadir}/%{name}/test/system/
 %{_datadir}/%{name}/test
 
 %changelog
-%if %{with manual_changelog}
+%if %{defined autochangelog}
+%autochangelog
+%else
 # NOTE: This changelog will be visible on CentOS 8 Stream builds
 # Other envs are capable of handling autochangelog
 * Tue Jun 13 2023 RH Container Bot <rhcontainerbot@fedoraproject.org>
 - Placeholder changelog for envs that are not autochangelog-ready.
 - Contact upstream if you need to report an issue with the build.
-%else
-%autochangelog
 %endif
