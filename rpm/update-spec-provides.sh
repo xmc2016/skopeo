@@ -4,9 +4,9 @@
 # packaging, via the `propose-downstream` packit action.
 # The goimports don't need to be present upstream.
 
-set -e
+set -eo pipefail
 
-PACKAGE=$(basename $(git rev-parse --show-toplevel))
+PACKAGE=skopeo
 # script is run from git root directory
 SPEC_FILE=rpm/$PACKAGE.spec
 
