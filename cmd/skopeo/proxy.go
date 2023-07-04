@@ -75,6 +75,7 @@ import (
 	"github.com/containers/image/v5/manifest"
 	ocilayout "github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/pkg/blobinfocache"
+	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
@@ -95,7 +96,8 @@ import (
 // 0.2.3: Added GetFullConfig
 // 0.2.4: Added OpenImageOptional
 // 0.2.5: Added LayerInfoJSON
-const protocolVersion = "0.2.5"
+// 0.2.6: Policy Verification before pulling OCI
+const protocolVersion = "0.2.6"
 
 // maxMsgSize is the current limit on a packet size.
 // Note that all non-metadata (i.e. payload data) is sent over a pipe.
@@ -264,6 +266,23 @@ func (h *proxyHandler) openImageImpl(args []any, allowNotFound bool) (replyBuf, 
 			return ret, nil
 		}
 		return ret, err
+	}
+
+	unparsedTopLevel := image.UnparsedInstance(imgsrc, nil)
+	policy, err := signature.DefaultPolicy(h.sysctx)
+	if err != nil {
+		return ret, err
+	}
+	policyContext, err := signature.NewPolicyContext(policy)
+	if err != nil {
+		return ret, err
+	}
+	allowed, err := policyContext.IsRunningImageAllowed(context.Background(), unparsedTopLevel)
+	if !allowed || err != nil {
+		return ret, err
+	}
+	if !allowed && err == nil {
+		return ret, fmt.Errorf("policy verification failed unexpectedly")
 	}
 
 	// Note that we never return zero as an imageid; this code doesn't yet
