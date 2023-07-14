@@ -69,8 +69,6 @@ BuildRequires: glib2-devel
 BuildRequires: make
 BuildRequires: shadow-utils-subid-devel
 Requires: containers-common >= 4:1-21
-# DO NOT DELETE BELOW LINE - used for updating downstream goimports
-# vendored libraries
 
 %description
 Command line utility to inspect images and repositories directly on Docker
