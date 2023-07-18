@@ -238,7 +238,7 @@ func isNotFoundImageError(err error) bool {
 		errors.Is(err, ocilayout.ImageNotFoundError{})
 }
 
-func (h *proxyHandler) openImageImpl(args []any, allowNotFound bool) (replyBuf, error) {
+func (h *proxyHandler) openImageImpl(args []any, allowNotFound bool) (retReplyBuf replyBuf, retErr error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 	var ret replyBuf
@@ -271,6 +271,12 @@ func (h *proxyHandler) openImageImpl(args []any, allowNotFound bool) (replyBuf, 
 	if err != nil {
 		return ret, err
 	}
+	defer func() {
+		if err := policyContext.Destroy(); err != nil {
+			retErr = noteCloseFailure(retErr, "tearing down policy context", err)
+		}
+	}()
+
 	unparsedTopLevel := image.UnparsedInstance(imgsrc, nil)
 	allowed, err := policyContext.IsRunningImageAllowed(context.Background(), unparsedTopLevel)
 	if !allowed || err != nil {
