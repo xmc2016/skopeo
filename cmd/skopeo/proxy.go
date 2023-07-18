@@ -279,11 +279,11 @@ func (h *proxyHandler) openImageImpl(args []any, allowNotFound bool) (retReplyBu
 
 	unparsedTopLevel := image.UnparsedInstance(imgsrc, nil)
 	allowed, err := policyContext.IsRunningImageAllowed(context.Background(), unparsedTopLevel)
-	if !allowed || err != nil {
+	if err != nil {
 		return ret, err
 	}
-	if !allowed && err == nil {
-		return ret, fmt.Errorf("policy verification failed unexpectedly")
+	if !allowed {
+		return ret, fmt.Errorf("internal inconsistency: policy verification failed without returning an error")
 	}
 
 	// Note that we never return zero as an imageid; this code doesn't yet
