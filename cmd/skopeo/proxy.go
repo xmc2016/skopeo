@@ -75,7 +75,6 @@ import (
 	"github.com/containers/image/v5/manifest"
 	ocilayout "github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/pkg/blobinfocache"
-	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
@@ -268,15 +267,11 @@ func (h *proxyHandler) openImageImpl(args []any, allowNotFound bool) (replyBuf, 
 		return ret, err
 	}
 
+	policyContext, err := h.opts.global.getPolicyContext()
+	if err != nil {
+		return ret, err
+	}
 	unparsedTopLevel := image.UnparsedInstance(imgsrc, nil)
-	policy, err := signature.DefaultPolicy(h.sysctx)
-	if err != nil {
-		return ret, err
-	}
-	policyContext, err := signature.NewPolicyContext(policy)
-	if err != nil {
-		return ret, err
-	}
 	allowed, err := policyContext.IsRunningImageAllowed(context.Background(), unparsedTopLevel)
 	if !allowed || err != nil {
 		return ret, err
