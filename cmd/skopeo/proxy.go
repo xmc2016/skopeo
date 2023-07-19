@@ -75,7 +75,6 @@ import (
 	"github.com/containers/image/v5/manifest"
 	ocilayout "github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/pkg/blobinfocache"
-	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
@@ -239,7 +238,7 @@ func isNotFoundImageError(err error) bool {
 		errors.Is(err, ocilayout.ImageNotFoundError{})
 }
 
-func (h *proxyHandler) openImageImpl(args []any, allowNotFound bool) (replyBuf, error) {
+func (h *proxyHandler) openImageImpl(args []any, allowNotFound bool) (retReplyBuf replyBuf, retErr error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 	var ret replyBuf
@@ -268,21 +267,23 @@ func (h *proxyHandler) openImageImpl(args []any, allowNotFound bool) (replyBuf, 
 		return ret, err
 	}
 
+	policyContext, err := h.opts.global.getPolicyContext()
+	if err != nil {
+		return ret, err
+	}
+	defer func() {
+		if err := policyContext.Destroy(); err != nil {
+			retErr = noteCloseFailure(retErr, "tearing down policy context", err)
+		}
+	}()
+
 	unparsedTopLevel := image.UnparsedInstance(imgsrc, nil)
-	policy, err := signature.DefaultPolicy(h.sysctx)
-	if err != nil {
-		return ret, err
-	}
-	policyContext, err := signature.NewPolicyContext(policy)
-	if err != nil {
-		return ret, err
-	}
 	allowed, err := policyContext.IsRunningImageAllowed(context.Background(), unparsedTopLevel)
-	if !allowed || err != nil {
+	if err != nil {
 		return ret, err
 	}
-	if !allowed && err == nil {
-		return ret, fmt.Errorf("policy verification failed unexpectedly")
+	if !allowed {
+		return ret, fmt.Errorf("internal inconsistency: policy verification failed without returning an error")
 	}
 
 	// Note that we never return zero as an imageid; this code doesn't yet
