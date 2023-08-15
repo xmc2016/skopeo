@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/containers/common v0.55.3
 	github.com/containers/image/v5 v5.27.1-0.20230814071742-35192da58823
-	github.com/containers/ocicrypt v1.1.7
+	github.com/containers/ocicrypt v1.1.8
 	github.com/containers/storage v1.48.1-0.20230728131509-c3da76fa3f63
 	github.com/docker/distribution v2.8.2+incompatible
 	github.com/opencontainers/go-digest v1.0.0
@@ -128,6 +128,5 @@ require (
 	google.golang.org/grpc v1.56.2 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.1 // indirect
-	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
