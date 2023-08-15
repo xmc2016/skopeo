@@ -117,6 +117,7 @@ help:
 	@echo " * 'install' - Install binaries and documents to system locations"
 	@echo " * 'binary' - Build skopeo with a container"
 	@echo " * 'bin/skopeo' - Build skopeo locally"
+	@echo " * 'bin/skopeo.OS.ARCH' - Build skopeo for specific OS and ARCH"
 	@echo " * 'test-unit' - Execute unit tests"
 	@echo " * 'test-integration' - Execute integration tests"
 	@echo " * 'validate' - Verify whether there is no conflict and all Go source files have been formatted, linted and vetted"

@@ -174,6 +174,16 @@ document generation can be skipped by passing `DISABLE_DOCS=1`:
 DISABLE_DOCS=1 make
 ```
 
+### Cross-compilation
+
+For cross-building skopeo, use the command `make bin/skopeo.OS.ARCH`, where OS represents
+the target operating system and ARCH stands for the desired architecture. For instance,
+to build skopeo for RISC-V 64-bit Linux, execute:
+
+```bash
+make bin/skopeo.linux.riscv64
+```
+
 ### Building documentation
 
 To build the manual you will need go-md2man.
