@@ -3,7 +3,7 @@ module github.com/containers/skopeo
 go 1.19
 
 require (
-	github.com/containers/common v0.55.0
+	github.com/containers/common v0.55.3
 	github.com/containers/image/v5 v5.27.1-0.20230814071742-35192da58823
 	github.com/containers/ocicrypt v1.1.7
 	github.com/containers/storage v1.48.1-0.20230728131509-c3da76fa3f63
