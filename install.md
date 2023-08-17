@@ -123,7 +123,7 @@ podman run docker://quay.io/skopeo/stable:latest copy --help
 
 Otherwise, read on for building and installing it from source:
 
-To build the `skopeo` binary you need at least Go 1.12.
+To build the `skopeo` binary you need at least Go 1.19.
 
 There are two ways to build skopeo: in a container, or locally without a
 container. Choose the one which better matches your needs and environment.
