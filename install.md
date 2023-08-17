@@ -123,7 +123,7 @@ podman run docker://quay.io/skopeo/stable:latest copy --help
 
 Otherwise, read on for building and installing it from source:
 
-To build the `skopeo` binary you need at least Go 1.12.
+To build the `skopeo` binary you need at least Go 1.19.
 
 There are two ways to build skopeo: in a container, or locally without a
 container. Choose the one which better matches your needs and environment.
@@ -172,6 +172,16 @@ Building of documentation requires `go-md2man`. On systems that do not have this
 document generation can be skipped by passing `DISABLE_DOCS=1`:
 ```
 DISABLE_DOCS=1 make
+```
+
+### Cross-compilation
+
+For cross-building skopeo, use the command `make bin/skopeo.OS.ARCH`, where OS represents
+the target operating system and ARCH stands for the desired architecture. For instance,
+to build skopeo for RISC-V 64-bit Linux, execute:
+
+```bash
+make bin/skopeo.linux.riscv64
 ```
 
 ### Building documentation
