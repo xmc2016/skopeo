@@ -161,7 +161,7 @@ github.com/containers/ocicrypt/keywrap/pkcs7
 github.com/containers/ocicrypt/spec
 github.com/containers/ocicrypt/utils
 github.com/containers/ocicrypt/utils/keyprovider
-# github.com/containers/storage v1.48.1-0.20230728131509-c3da76fa3f63
+# github.com/containers/storage v1.49.0
 ## explicit; go 1.19
 github.com/containers/storage
 github.com/containers/storage/drivers
@@ -432,7 +432,7 @@ github.com/opencontainers/image-spec/specs-go/v1
 # github.com/opencontainers/image-tools v1.0.0-rc3
 ## explicit
 github.com/opencontainers/image-tools/image
-# github.com/opencontainers/runc v1.1.8
+# github.com/opencontainers/runc v1.1.9
 ## explicit; go 1.17
 github.com/opencontainers/runc/libcontainer/user
 # github.com/opencontainers/runtime-spec v1.1.0
