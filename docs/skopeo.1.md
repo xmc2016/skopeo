@@ -121,7 +121,7 @@ Print the version number
 
   **/etc/containers/registries.d**
   Default directory containing registry configuration, if **--registries.d** is not specified.
-  The contents of this directory are documented in [containers-policy.json(5)](https://github.com/containers/image/blob/main/docs/containers-policy.json.5.md).
+  The contents of this directory are documented in [containers-registries.d(5)](https://github.com/containers/image/blob/main/docs/containers-registries.d.5.md).
 
 ## SEE ALSO
 skopeo-login(1), docker-login(1), containers-auth.json(5), containers-storage.conf(5), containers-policy.json(5), containers-transports(5)
