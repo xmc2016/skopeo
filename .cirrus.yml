@@ -77,14 +77,13 @@ doccheck_task:
       "${SKOPEO_PATH}/${SCRIPT_BASE}/runner.sh" doccheck
 
 osx_task:
-    # Don't run for docs-only or multi-arch image builds.
+    # Don't run for docs-only builds.
     # Also don't run on release-branches or their PRs,
     # since base container-image is not version-constrained.
     only_if: &not_docs_or_release_branch >-
         ($CIRRUS_BASE_BRANCH == $CIRRUS_DEFAULT_BRANCH ||
          $CIRRUS_BRANCH == $CIRRUS_DEFAULT_BRANCH ) &&
-        $CIRRUS_CHANGE_TITLE !=~ '.*CI:DOCS.*' &&
-        $CIRRUS_CRON != 'multiarch'
+        $CIRRUS_CHANGE_TITLE !=~ '.*CI:DOCS.*'
     depends_on:
         - validate
     macos_instance:
@@ -106,8 +105,7 @@ osx_task:
 cross_task:
     alias: cross
     only_if: >-
-        $CIRRUS_CHANGE_TITLE !=~ '.*CI:DOCS.*' &&
-        $CIRRUS_CRON != 'multiarch'
+        $CIRRUS_CHANGE_TITLE !=~ '.*CI:DOCS.*'
     depends_on:
         - validate
     gce_instance: &standardvm
@@ -170,11 +168,10 @@ ostree-rs-ext_task:
 #####
 test_skopeo_task:
     alias: test_skopeo
-    # Don't test for [CI:DOCS], [CI:BUILD], or 'multiarch' cron.
+    # Don't test for [CI:DOCS], [CI:BUILD].
     only_if: >-
         $CIRRUS_CHANGE_TITLE !=~ '.*CI:BUILD.*' &&
-        $CIRRUS_CHANGE_TITLE !=~ '.*CI:DOCS.*' &&
-        $CIRRUS_CRON != 'multiarch'
+        $CIRRUS_CHANGE_TITLE !=~ '.*CI:DOCS.*'
     depends_on:
         - validate
     gce_instance:
@@ -205,49 +202,6 @@ test_skopeo_task:
         "${SKOPEO_PATH}/${SCRIPT_BASE}/runner.sh" integration
     system_script: >
         "${SKOPEO_PATH}/${SCRIPT_BASE}/runner.sh" system
-
-
-image_build_task: &image-build
-    name: "Build multi-arch $CTXDIR"
-    alias: image_build
-    # Some of these container images take > 1h to build, limit
-    # this task to a specific Cirrus-Cron entry with this name.
-    only_if: $CIRRUS_CRON == 'multiarch'
-    timeout_in: 120m  # emulation is sssllllooooowwww
-    gce_instance:
-        <<: *standardvm
-        image_name: build-push-${IMAGE_SUFFIX}
-        # More muscle required for parallel multi-arch build
-        type: "n2-standard-4"
-    matrix:
-        - env:
-            CTXDIR: contrib/skopeoimage/upstream
-        - env:
-            CTXDIR: contrib/skopeoimage/testing
-        - env:
-            CTXDIR: contrib/skopeoimage/stable
-    env:
-        SKOPEO_USERNAME: ENCRYPTED[4195884d23b154553f2ddb26a63fc9fbca50ba77b3e447e4da685d8639ed9bc94b9a86a9c77272c8c80d32ead9ca48da]
-        SKOPEO_PASSWORD: ENCRYPTED[36e06f9befd17e5da2d60260edb9ef0d40e6312e2bba4cf881d383f1b8b5a18c8e5a553aea2fdebf39cebc6bd3b3f9de]
-        CONTAINERS_USERNAME: ENCRYPTED[dd722c734641f103b394a3a834d51ca5415347e378637cf98ee1f99e64aad2ec3dbd4664c0d94cb0e06b83d89e9bbe91]
-        CONTAINERS_PASSWORD: ENCRYPTED[d8b0fac87fe251cedd26c864ba800480f9e0570440b9eb264265b67411b253a626fb69d519e188e6c9a7f525860ddb26]
-    main_script:
-        - source /etc/automation_environment
-        - main.sh $CIRRUS_REPO_CLONE_URL $CTXDIR
-
-
-test_image_build_task:
-    <<: *image-build
-    alias: test_image_build
-    # Allow this to run inside a PR w/ [CI:BUILD] only.
-    only_if: $CIRRUS_PR != '' && $CIRRUS_CHANGE_TITLE =~ '.*CI:BUILD.*'
-    # This takes a LONG time, only run when requested.  N/B: Any task
-    # made to depend on this one will block FOREVER unless triggered.
-    # DO NOT ADD THIS TASK AS DEPENDENCY FOR `success_task`.
-    trigger_type: manual
-    # Overwrite all 'env', don't push anything, just do the build.
-    env:
-        DRYRUN: 1
 
 
 # This task is critical.  It updates the "last-used by" timestamp stored
@@ -288,7 +242,6 @@ success_task:
         - cross
         - proxy_ostree_ext
         - test_skopeo
-        - image_build
         - meta
     container: *smallcontainer
     env:
