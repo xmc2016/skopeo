@@ -30,8 +30,8 @@ github.com/containerd/containerd v1.7.6 h1:oNAVsnhPoy4BTPQivLgTzI9Oleml9l/+eYIDY
 github.com/containerd/containerd v1.7.6/go.mod h1:SY6lrkkuJT40BVNO37tlYTSnKJnP5AXBc0fhx0q+TJ4=
 github.com/containerd/stargz-snapshotter/estargz v0.14.3 h1:OqlDCK3ZVUO6C3B/5FSkDwbkEETK84kQgEeFwDC+62k=
 github.com/containerd/stargz-snapshotter/estargz v0.14.3/go.mod h1:KY//uOCIkSuNAHhJogcZtrNHdKrA99/FCCRjE3HD36o=
-github.com/containers/common v0.56.1-0.20230920110729-eb4ad859f309 h1:ZuP6m9Ps9bBR/3TlR4AqzobAvtYstKkoYmKIg3R7O84=
-github.com/containers/common v0.56.1-0.20230920110729-eb4ad859f309/go.mod h1:ABFEglmyt48WWWQv80kGhitfbVfR1Br35wk3gBQdrIk=
+github.com/containers/common v0.56.1-0.20231002091908-745eaa498509 h1:og5WEvZ2R4WMaO7L3F+Nfq0vfhtIZBxfG6BOVpG+Vfs=
+github.com/containers/common v0.56.1-0.20231002091908-745eaa498509/go.mod h1:8whK9BaTeJqaSTAM0r2A7OdW+XVS+4X9SVh0D6zxpek=
 github.com/containers/image/v5 v5.28.0 h1:H4cWbdI88UA/mDb6SxMo3IxpmS1BSs/Kifvhwt9g048=
 github.com/containers/image/v5 v5.28.0/go.mod h1:9aPnNkwHNHgGl9VlQxXEshvmOJRbdRAc1rNDD6sP2eU=
 github.com/containers/libtrust v0.0.0-20230121012942-c1716e8a8d01 h1:Qzk5C6cYglewc+UyGf6lc8Mj2UaPTHy/iF2De0/77CA=
@@ -267,7 +267,7 @@ github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLA
 github.com/oklog/ulid v1.3.1 h1:EGfNDEx6MqHz8B3uNV6QAib1UR2Lm97sHi3ocA6ESJ4=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
 github.com/onsi/ginkgo/v2 v2.12.1 h1:uHNEO1RP2SpuZApSkel9nEh1/Mu+hmQe7Q+Pepg5OYA=
-github.com/onsi/gomega v1.27.10 h1:naR28SdDFlqrG6kScpT8VWpu1xWY5nJRCF3XaYyBjhI=
+github.com/onsi/gomega v1.28.0 h1:i2rg/p9n/UqIDAMFUJ6qIUUMcsqOuUHgbpbu235Vr1c=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/image-spec v1.1.0-rc5 h1:Ygwkfw9bpDvs+c9E34SdgGOj41dX/cbdlwvlWt0pnFI=
