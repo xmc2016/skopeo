@@ -182,7 +182,7 @@ Existing signatures, if any, are preserved as well.
 
 **--dest-compress-format** _format_
 
-Specifies the compression format to use.  Supported values are: `gzip` and `zstd`.
+Specifies the compression format to use.  Supported values are: `gzip`, `zstd` and `zstd:chunked`.
 
 **--dest-compress-level** _format_
 
