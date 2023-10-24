@@ -20,11 +20,6 @@ env:
     # Save a little typing (path relative to $CIRRUS_WORKING_DIR)
     SCRIPT_BASE: "./contrib/cirrus"
 
-    ####
-    #### Cache-image names to test with (double-quotes around names are critical)
-    ####
-    FEDORA_NAME: "fedora-38"
-
     # Google-cloud VM Images
     IMAGE_SUFFIX: "c20231004t194547z-f39f38d13"
     FEDORA_CACHE_IMAGE_NAME: "fedora-${IMAGE_SUFFIX}"
