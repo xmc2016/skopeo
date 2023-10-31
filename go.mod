@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/containers/common v0.56.1-0.20231002091908-745eaa498509
 	github.com/containers/image/v5 v5.28.0
-	github.com/containers/ocicrypt v1.1.8
+	github.com/containers/ocicrypt v1.1.9
 	github.com/containers/storage v1.50.2
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/opencontainers/go-digest v1.0.0
