@@ -36,6 +36,10 @@ Path of the authentication file. Default is ${XDG\_RUNTIME\_DIR}/containers/auth
 Note: You can also override the default path of the authentication file by setting the REGISTRY\_AUTH\_FILE
 environment variable. `export REGISTRY_AUTH_FILE=path`
 
+**--compat-auth-file**=*path*
+
+Instead of updating the default credentials file, update the one at *path*, and use a Docker-compatible format.
+
 **--get-login**
 
 Return the logged-in user for the registry. Return error if no login is found.
