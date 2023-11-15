@@ -1,7 +1,7 @@
 module github.com/containers/skopeo
 
 // Minimum required golang version
-go 1.19 // *****  ATTENTION  WARNING  CAUTION  DANGER  ******
+go 1.20 // *****  ATTENTION  WARNING  CAUTION  DANGER  ******
 
 //         Go versions 1.21 and later will AUTO-UPDATE based
 //         on currently running tools and the (new) `toolchain`
