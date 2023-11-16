@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/containers/common v0.56.1-0.20231116145922-4857e16ba481
-	github.com/containers/image/v5 v5.28.1-0.20231115174231-199d2562a0d1
+	github.com/containers/image/v5 v5.29.0
 	github.com/containers/ocicrypt v1.1.9
 	github.com/containers/storage v1.51.0
 	github.com/docker/distribution v2.8.3+incompatible

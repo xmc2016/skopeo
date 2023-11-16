@@ -32,8 +32,8 @@ github.com/containerd/stargz-snapshotter/estargz v0.15.1 h1:eXJjw9RbkLFgioVaTG+G
 github.com/containerd/stargz-snapshotter/estargz v0.15.1/go.mod h1:gr2RNwukQ/S9Nv33Lt6UC7xEx58C+LHRdoqbEKjz1Kk=
 github.com/containers/common v0.56.1-0.20231116145922-4857e16ba481 h1:CMKyklpGngAH9Ao6hTmxglYFfAgxw/Ayu/ovB81lf24=
 github.com/containers/common v0.56.1-0.20231116145922-4857e16ba481/go.mod h1:OWGhho071scyQI0NdI7uQPCLxNyNEv2ExXvxJUWmZoM=
-github.com/containers/image/v5 v5.28.1-0.20231115174231-199d2562a0d1 h1:r0pQSYw/b6NZqduvo72hb+4Q50VQ/pvazBckzyE1YuU=
-github.com/containers/image/v5 v5.28.1-0.20231115174231-199d2562a0d1/go.mod h1:0/j6iwLprBC+yraLkrZRkc3egvlZfM7hjNcGhzZfrMs=
+github.com/containers/image/v5 v5.29.0 h1:9+nhS/ZM7c4Kuzu5tJ0NMpxrgoryOJ2HAYTgG8Ny7j4=
+github.com/containers/image/v5 v5.29.0/go.mod h1:kQ7qcDsps424ZAz24thD+x7+dJw1vgur3A9tTDsj97E=
 github.com/containers/libtrust v0.0.0-20230121012942-c1716e8a8d01 h1:Qzk5C6cYglewc+UyGf6lc8Mj2UaPTHy/iF2De0/77CA=
 github.com/containers/libtrust v0.0.0-20230121012942-c1716e8a8d01/go.mod h1:9rfv8iPl1ZP7aqh9YA68wnZv2NUDbXdcdPHVz0pFbPY=
 github.com/containers/ocicrypt v1.1.9 h1:2Csfba4jse85Raxk5HIyEk8OwZNjRvfkhEGijOjIdEM=

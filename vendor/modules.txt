@@ -70,7 +70,7 @@ github.com/containers/common/pkg/password
 github.com/containers/common/pkg/report
 github.com/containers/common/pkg/report/camelcase
 github.com/containers/common/pkg/retry
-# github.com/containers/image/v5 v5.28.1-0.20231115174231-199d2562a0d1
+# github.com/containers/image/v5 v5.29.0
 ## explicit; go 1.19
 github.com/containers/image/v5/copy
 github.com/containers/image/v5/directory
