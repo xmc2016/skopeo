@@ -55,6 +55,14 @@ sudo apk add skopeo
 
 [Package Info](https://pkgs.alpinelinux.org/packages?name=skopeo)
 
+### Arch Linux
+
+```sh
+sudo pacman -S skopeo
+```
+
+[Package Info](https://archlinux.org/packages/extra/x86_64/skopeo/)
+
 ### macOS
 
 ```sh
@@ -157,6 +165,11 @@ brew install gpgme
 ```bash
 # openSUSE:
 sudo zypper install libgpgme-devel device-mapper-devel libbtrfs-devel glib2-devel
+```
+
+```bash
+# Arch Linux:
+sudo pacman -S base-devel gpgme device-mapper btrfs-progs
 ```
 
 Make sure to clone this repository in your `GOPATH` - otherwise compilation fails.
