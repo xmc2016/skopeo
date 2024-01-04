@@ -24,6 +24,7 @@ require (
 require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/BurntSushi/toml v1.3.2 // indirect
+	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/Microsoft/hcsshim v0.12.0-rc.1 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
