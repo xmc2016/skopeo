@@ -9,7 +9,7 @@ require (
 	github.com/containers/storage v1.51.0
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opencontainers/image-spec v1.1.0-rc5
+	github.com/opencontainers/image-spec v1.1.0-rc6
 	github.com/opencontainers/image-tools v1.0.0-rc3
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
