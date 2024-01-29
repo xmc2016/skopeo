@@ -8,7 +8,7 @@ set -e
 #
 # Paradoxically (FIXME: clean this up), SKOPEO_CONTAINER_TESTS is set
 # both inside a container and without a container (in a CI VM); it actually means
-# "it is safe to desctructively modify the system for tests".
+# "it is safe to destructively modify the system for tests".
 #
 # On a CI VM, we can just use Podman as it is already configured; the changes below,
 # to use VFS, are necessary only inside a container, because overlay-inside-overlay
