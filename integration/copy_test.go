@@ -187,7 +187,7 @@ func (s *copySuite) TestCopyWithManifestListStorage() {
 	assertSkopeoSucceeds(t, "", "copy", knownListImage, "containers-storage:"+storage+"test")
 	assertSkopeoSucceeds(t, "", "copy", knownListImage, "dir:"+dir1)
 	assertSkopeoSucceeds(t, "", "copy", "containers-storage:"+storage+"test", "dir:"+dir2)
-	runDecompressDirs(t, dir1, dir2)
+	decompressDirs(t, dir1, dir2)
 	assertDirImagesAreEqual(t, dir1, dir2)
 }
 
@@ -201,7 +201,7 @@ func (s *copySuite) TestCopyWithManifestListStorageMultiple() {
 	assertSkopeoSucceeds(t, "", "--override-arch", "arm64", "copy", knownListImage, "containers-storage:"+storage+"test")
 	assertSkopeoSucceeds(t, "", "--override-arch", "arm64", "copy", knownListImage, "dir:"+dir1)
 	assertSkopeoSucceeds(t, "", "copy", "containers-storage:"+storage+"test", "dir:"+dir2)
-	runDecompressDirs(t, dir1, dir2)
+	decompressDirs(t, dir1, dir2)
 	assertDirImagesAreEqual(t, dir1, dir2)
 }
 
@@ -248,7 +248,7 @@ func (s *copySuite) TestCopyWithManifestListStorageDigest() {
 	assertSkopeoSucceeds(t, "", "copy", knownListImage+"@"+digest, "containers-storage:"+storage+"test@"+digest)
 	assertSkopeoSucceeds(t, "", "copy", "containers-storage:"+storage+"test@"+digest, "dir:"+dir1)
 	assertSkopeoSucceeds(t, "", "copy", knownListImage+"@"+digest, "dir:"+dir2)
-	runDecompressDirs(t, dir1, dir2)
+	decompressDirs(t, dir1, dir2)
 	assertDirImagesAreEqual(t, dir1, dir2)
 }
 
@@ -265,7 +265,7 @@ func (s *copySuite) TestCopyWithManifestListStorageDigestMultipleArches() {
 	assertSkopeoSucceeds(t, "", "copy", knownListImage+"@"+digest, "containers-storage:"+storage+"test@"+digest)
 	assertSkopeoSucceeds(t, "", "copy", "containers-storage:"+storage+"test@"+digest, "dir:"+dir1)
 	assertSkopeoSucceeds(t, "", "copy", knownListImage+"@"+digest, "dir:"+dir2)
-	runDecompressDirs(t, dir1, dir2)
+	decompressDirs(t, dir1, dir2)
 	assertDirImagesAreEqual(t, dir1, dir2)
 }
 
