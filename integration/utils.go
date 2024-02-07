@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"compress/gzip"
+	"encoding/json"
 	"io"
 	"net"
 	"net/netip"
@@ -13,12 +15,12 @@ import (
 	"time"
 
 	"github.com/containers/image/v5/manifest"
+	"github.com/opencontainers/go-digest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const skopeoBinary = "skopeo"
-const decompressDirsBinary = "./decompress-dirs.sh"
 
 const testFQIN = "docker://quay.io/libpod/busybox" // tag left off on purpose, some tests need to add a special one
 const testFQIN64 = "docker://quay.io/libpod/busybox:amd64"
@@ -186,25 +188,98 @@ func fileFromFixture(t *testing.T, inputPath string, edits map[string]string) st
 	return path
 }
 
-// runDecompressDirs runs decompress-dirs.sh using exec.Command().CombinedOutput, verifies that the exit status is 0,
-// and optionally that the output matches a multi-line regexp if it is nonempty; or terminates c on failure
-func runDecompressDirs(t *testing.T, args ...string) {
-	t.Logf("Running %s %s", decompressDirsBinary, strings.Join(args, " "))
-	for i, dir := range args {
+// decompressDirs decompresses specified dir:-formatted directories
+func decompressDirs(t *testing.T, dirs ...string) {
+	t.Logf("Decompressing %s", strings.Join(dirs, " "))
+	for i, dir := range dirs {
 		m, err := os.ReadFile(filepath.Join(dir, "manifest.json"))
 		require.NoError(t, err)
 		t.Logf("manifest %d before: %s", i+1, string(m))
-	}
-	out, err := exec.Command(decompressDirsBinary, args...).CombinedOutput()
-	assert.NoError(t, err, "%s", out)
-	for i, dir := range args {
-		if len(out) > 0 {
-			t.Logf("output: %s", out)
-		}
-		m, err := os.ReadFile(filepath.Join(dir, "manifest.json"))
+
+		decompressDir(t, dir)
+
+		m, err = os.ReadFile(filepath.Join(dir, "manifest.json"))
 		require.NoError(t, err)
 		t.Logf("manifest %d after: %s", i+1, string(m))
 	}
+}
+
+// getRawMapField assigns a value of rawMap[key] to dest,
+// failing if it does not exist or if it doesn’t have the expected type
+func getRawMapField[T any](t *testing.T, rawMap map[string]any, key string, dest *T) {
+	rawValue, ok := rawMap[key]
+	require.True(t, ok, key)
+	value, ok := rawValue.(T)
+	require.True(t, ok, key, "%#v", value)
+	*dest = value
+}
+
+// decompressDir modifies a dir:-formatted directory to replace gzip-compressed layers with uncompressed variants,
+// and to use a ~canonical formatting of manifest.json.
+func decompressDir(t *testing.T, dir string) {
+	// This is, overall, very dumb; the “obvious” way would be to invoke skopeo to decompress,
+	// or at least to use c/image to parse/format the manifest.
+	//
+	// But this is used to test (aspects of) those code paths… so, it’s acceptable for this to be
+	// dumb and to make assumptions about the data, but it should not share code.
+
+	manifestBlob, err := os.ReadFile(filepath.Join(dir, "manifest.json"))
+	require.NoError(t, err)
+	var rawManifest map[string]any
+	err = json.Unmarshal(manifestBlob, &rawManifest)
+	require.NoError(t, err)
+	var rawLayers []any
+	getRawMapField(t, rawManifest, "layers", &rawLayers)
+	for i, rawLayerValue := range rawLayers {
+		rawLayer, ok := rawLayerValue.(map[string]any)
+		require.True(t, ok)
+		var digestString string
+		getRawMapField(t, rawLayer, "digest", &digestString)
+		compressedDigest, err := digest.Parse(digestString)
+		require.NoError(t, err)
+		if compressedDigest.String() == "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" { // An empty file
+			continue
+		}
+
+		compressedPath := filepath.Join(dir, compressedDigest.Encoded())
+		compressedStream, err := os.Open(compressedPath)
+		require.NoError(t, err)
+		defer compressedStream.Close()
+
+		uncompressedStream, err := gzip.NewReader(compressedStream)
+		if err != nil {
+			continue // Silently assume the layer is not gzip-compressed
+		}
+		tempDest, err := os.CreateTemp(dir, "decompressing")
+		require.NoError(t, err)
+		digester := digest.Canonical.Digester()
+		uncompressedSize, err := io.Copy(tempDest, io.TeeReader(uncompressedStream, digester.Hash()))
+		require.NoError(t, err)
+		err = uncompressedStream.Close()
+		require.NoError(t, err)
+		uncompressedDigest := digester.Digest()
+		uncompressedPath := filepath.Join(dir, uncompressedDigest.Encoded())
+		err = os.Rename(tempDest.Name(), uncompressedPath)
+		require.NoError(t, err)
+		err = os.Remove(compressedPath)
+		require.NoError(t, err)
+
+		rawLayer["digest"] = uncompressedDigest.String()
+		rawLayer["size"] = uncompressedSize
+		var mimeType string
+		getRawMapField(t, rawLayer, "mediaType", &mimeType)
+		if strings.HasSuffix(mimeType, ".gzip") { // This should use CutSuffix with Go ≥1.20
+			rawLayer["mediaType"] = strings.TrimSuffix(mimeType, ".gzip")
+		}
+
+		rawLayers[i] = rawLayer
+	}
+	rawManifest["layers"] = rawLayers
+
+	manifestBlob, err = json.Marshal(rawManifest)
+	require.NoError(t, err)
+	err = os.WriteFile(filepath.Join(dir, "manifest.json"), manifestBlob, 0o600)
+	require.NoError(t, err)
 }
 
 // Verify manifest in a dir: image at dir is expectedMIMEType.
