@@ -122,6 +122,14 @@ Skopeo has not yet been packaged for Windows. There is an [open feature
 request](https://github.com/containers/skopeo/issues/715) and contributions are
 always welcome.
 
+## GO ENV settings
+
+In order for the system libraries to get compiled during the build process make sure that ```CGO_ENABLED='1'```.
+
+```bash
+go env -w CGO_ENABLED='1'
+```
+
 
 ## Container Images
 
