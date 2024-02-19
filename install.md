@@ -196,7 +196,7 @@ DISABLE_DOCS=1 make
 
 #### Additional prerequisites
 
-In order to dynamically link against system libraries and avoid compilation erros the ```CGO_ENABLED='1'``` flag must be enabled. You can easily check by ```go env | grep CGO_ENABLED```.
+In order to dynamically link against system libraries and avoid compilation errors the ```CGO_ENABLED='1'``` flag must be enabled. You can easily check by ```go env | grep CGO_ENABLED```.
 
 An alternative would be to set the `BUILDTAGS=containers_image_openpgp` (this removes the dependency on `libgpgme` and its companion libraries).
 
