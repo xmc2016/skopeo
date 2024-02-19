@@ -122,15 +122,6 @@ Skopeo has not yet been packaged for Windows. There is an [open feature
 request](https://github.com/containers/skopeo/issues/715) and contributions are
 always welcome.
 
-## GO ENV settings
-
-In order for the system libraries to get compiled during the build process make sure that ```CGO_ENABLED='1'```.
-
-```bash
-go env -w CGO_ENABLED='1'
-```
-
-
 ## Container Images
 
 Skopeo container images are available at `quay.io/skopeo/stable:latest`.
@@ -202,6 +193,12 @@ document generation can be skipped by passing `DISABLE_DOCS=1`:
 ```
 DISABLE_DOCS=1 make
 ```
+
+#### Additional prerequisites
+
+In order to dynamically link against system libraries and avoid compilation erros the ```CGO_ENABLED='1'``` flag must be enabled. You can easily check by ```go env | grep CGO_ENABLED```.
+
+An alternative would be to set the `BUILDTAGS=containers_image_openpgp` (this removes the dependency on `libgpgme` and its companion libraries).
 
 ### Cross-compilation
 
