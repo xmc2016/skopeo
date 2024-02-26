@@ -3,6 +3,6 @@
 
 package main
 
-func reexecIfNecessaryForImages(inputImageNames ...string) error {
+func reexecIfNecessaryForImages(_ ...string) error {
 	return nil
 }
