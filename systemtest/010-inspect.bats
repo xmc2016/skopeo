@@ -129,4 +129,11 @@ END_EXPECT
     expect_output --from="$repo_tags" "" "inspect --no-tags was expected to return empty RepoTags[]"
 }
 
+@test "inspect: image unknown" {
+    # non existing image
+    run_skopeo 2 inspect containers-storage:non-existing-tag
+    expect_output --substring "identifier is not an image" \
+		  "skopeo inspect containers-storage:010101010101"
+}
+
 # vim: filetype=sh

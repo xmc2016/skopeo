@@ -40,7 +40,7 @@ function setup() {
     expect_output --substring "authentication required"
 
     # Correct creds, but no such image
-    run_skopeo 1 inspect --tls-verify=false --creds=$testuser:$testpassword \
+    run_skopeo 2 inspect --tls-verify=false --creds=$testuser:$testpassword \
                docker://localhost:5000/nonesuch
     expect_output --substring "manifest unknown"
 
