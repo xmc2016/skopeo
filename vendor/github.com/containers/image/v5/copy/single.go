@@ -383,7 +383,11 @@ func (ic *imageCopier) compareImageDestinationManifestEqual(ctx context.Context,
 
 	compressionAlgos := set.New[string]()
 	for _, srcInfo := range ic.src.LayerInfos() {
-		if _, c := compressionEditsFromMIMEType(srcInfo); c != nil {
+		_, c, err := compressionEditsFromBlobInfo(srcInfo)
+		if err != nil {
+			return nil, err
+		}
+		if c != nil {
 			compressionAlgos.Add(c.Name())
 		}
 	}
@@ -636,21 +640,28 @@ type diffIDResult struct {
 	err    error
 }
 
-// compressionEditsFromMIMEType returns a (CompressionOperation, CompressionAlgorithm) value pair suitable
-// for types.BlobInfo, based on a MIME type of srcInfo.
-func compressionEditsFromMIMEType(srcInfo types.BlobInfo) (types.LayerCompression, *compressiontypes.Algorithm) {
+// compressionEditsFromBlobInfo returns a (CompressionOperation, CompressionAlgorithm) value pair suitable
+// for types.BlobInfo.
+func compressionEditsFromBlobInfo(srcInfo types.BlobInfo) (types.LayerCompression, *compressiontypes.Algorithm, error) {
 	// This MIME type → compression mapping belongs in manifest-specific code in our manifest
 	// package (but we should preferably replace/change UpdatedImage instead of productizing
 	// this workaround).
 	switch srcInfo.MediaType {
 	case manifest.DockerV2Schema2LayerMediaType, imgspecv1.MediaTypeImageLayerGzip:
-		return types.PreserveOriginal, &compression.Gzip
+		return types.PreserveOriginal, &compression.Gzip, nil
 	case imgspecv1.MediaTypeImageLayerZstd:
-		return types.PreserveOriginal, &compression.Zstd
+		tocDigest, err := chunkedToc.GetTOCDigest(srcInfo.Annotations)
+		if err != nil {
+			return types.PreserveOriginal, nil, err
+		}
+		if tocDigest != nil {
+			return types.PreserveOriginal, &compression.ZstdChunked, nil
+		}
+		return types.PreserveOriginal, &compression.Zstd, nil
 	case manifest.DockerV2SchemaLayerMediaTypeUncompressed, imgspecv1.MediaTypeImageLayer:
-		return types.Decompress, nil
+		return types.Decompress, nil, nil
 	default:
-		return types.PreserveOriginal, nil
+		return types.PreserveOriginal, nil, nil
 	}
 }
 
@@ -666,7 +677,12 @@ func (ic *imageCopier) copyLayer(ctx context.Context, srcInfo types.BlobInfo, to
 	// (Sadly UpdatedImage() is documented to not update MediaTypes from
 	//  ManifestUpdateOptions.LayerInfos[].MediaType, so we are doing it indirectly.)
 	if srcInfo.CompressionOperation == types.PreserveOriginal && srcInfo.CompressionAlgorithm == nil {
-		srcInfo.CompressionOperation, srcInfo.CompressionAlgorithm = compressionEditsFromMIMEType(srcInfo)
+		op, algo, err := compressionEditsFromBlobInfo(srcInfo)
+		if err != nil {
+			return types.BlobInfo{}, "", err
+		}
+		srcInfo.CompressionOperation = op
+		srcInfo.CompressionAlgorithm = algo
 	}
 
 	ic.c.printCopyInfo("blob", srcInfo)
@@ -695,10 +711,15 @@ func (ic *imageCopier) copyLayer(ctx context.Context, srcInfo types.BlobInfo, to
 			requiredCompression = ic.compressionFormat
 		}
 
+		var tocDigest digest.Digest
+
 		// Check if we have a chunked layer in storage that's based on that blob.  These layers are stored by their TOC digest.
-		tocDigest, err := chunkedToc.GetTOCDigest(srcInfo.Annotations)
+		d, err := chunkedToc.GetTOCDigest(srcInfo.Annotations)
 		if err != nil {
 			return types.BlobInfo{}, "", err
+		}
+		if d != nil {
+			tocDigest = *d
 		}
 
 		reused, reusedBlob, err := ic.c.dest.TryReusingBlobWithOptions(ctx, srcInfo, private.TryReusingBlobOptions{
@@ -718,7 +739,11 @@ func (ic *imageCopier) copyLayer(ctx context.Context, srcInfo types.BlobInfo, to
 		if reused {
 			logrus.Debugf("Skipping blob %s (already present):", srcInfo.Digest)
 			func() { // A scope for defer
-				bar := ic.c.createProgressBar(pool, false, types.BlobInfo{Digest: reusedBlob.Digest, Size: 0}, "blob", "skipped: already exists")
+				label := "skipped: already exists"
+				if reusedBlob.MatchedByTOCDigest {
+					label = "skipped: already exists (found by TOC)"
+				}
+				bar := ic.c.createProgressBar(pool, false, types.BlobInfo{Digest: reusedBlob.Digest, Size: 0}, "blob", label)
 				defer bar.Abort(false)
 				bar.mark100PercentComplete()
 			}()
@@ -751,7 +776,10 @@ func (ic *imageCopier) copyLayer(ctx context.Context, srcInfo types.BlobInfo, to
 				wrapped: ic.c.rawSource,
 				bar:     bar,
 			}
-			uploadedBlob, err := ic.c.dest.PutBlobPartial(ctx, &proxy, srcInfo, ic.c.blobInfoCache)
+			uploadedBlob, err := ic.c.dest.PutBlobPartial(ctx, &proxy, srcInfo, private.PutBlobPartialOptions{
+				Cache:      ic.c.blobInfoCache,
+				LayerIndex: layerIndex,
+			})
 			if err == nil {
 				if srcInfo.Size != -1 {
 					refill := srcInfo.Size - bar.Current()
