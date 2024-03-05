@@ -131,7 +131,8 @@ For example,
 podman run docker://quay.io/skopeo/stable:latest copy --help
 ```
 
-[Read more](./contrib/skopeoimage/README.md).
+The skopeo container image build context and automation are
+located at [https://github.com/containers/image_build/tree/main/skopeo](https://github.com/containers/image_build/tree/main/skopeo)
 
 
 ## Building from Source
