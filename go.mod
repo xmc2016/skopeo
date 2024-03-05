@@ -7,7 +7,7 @@ require (
 	github.com/containers/common v0.57.4
 	github.com/containers/image/v5 v5.29.3-0.20240301163503-faa4f4fd0e4f
 	github.com/containers/ocicrypt v1.1.9
-	github.com/containers/storage v1.52.1-0.20240301111729-226cffb1c4d2
+	github.com/containers/storage v1.53.0
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0
