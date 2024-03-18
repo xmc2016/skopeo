@@ -159,7 +159,7 @@ cp -pav systemtest/* %{buildroot}/%{_datadir}/%{name}/test/system/
 %{_datadir}/zsh/site-functions/_%{name}
 
 %files tests
-%license LICENSE
+%license LICENSE vendor/modules.txt
 %{_datadir}/%{name}/test
 
 %changelog
