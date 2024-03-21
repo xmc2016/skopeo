@@ -1,21 +1,10 @@
 module github.com/containers/skopeo
 
 // Minimum required golang version
-go 1.20 // *****  ATTENTION  WARNING  CAUTION  DANGER  ******
+go 1.21
 
-//         Go versions 1.21 and later will AUTO-UPDATE based
-//         on currently running tools and the (new) `toolchain`
-//         value (when also increasing the `go` value above).
-//         ref: https://go.dev/doc/toolchain  Because several
-//         different distros and distro-versions build from
-//         this code, golang version consistency is
-//         desireable.  After manually updating to 1.21, a
-//         `toolchain` specificication should be added to pin
-//         the version and block auto-updates.  This does not
-//         block any future changes to the `go` value.
-//         Ref: Upstream discussion:
-//         https://github.com/golang/go/issues/65847
-//         *****  ATTENTION  WARNING  CAUTION  DANGER  ******
+// Warning: Ensure the "go" and "toolchain" versions match exactly to prevent unwanted auto-updates
+toolchain go1.21.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
