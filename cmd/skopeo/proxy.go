@@ -73,13 +73,10 @@ import (
 
 	"github.com/containers/image/v5/image"
 	"github.com/containers/image/v5/manifest"
-	ocilayout "github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/pkg/blobinfocache"
 	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
-	dockerdistributionerrcode "github.com/docker/distribution/registry/api/errcode"
-	dockerdistributionapi "github.com/docker/distribution/registry/api/v2"
 	"github.com/opencontainers/go-digest"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
@@ -217,25 +214,6 @@ func (h *proxyHandler) Initialize(args []any) (replyBuf, error) {
 // The return value is an opaque integer handle.
 func (h *proxyHandler) OpenImage(args []any) (replyBuf, error) {
 	return h.openImageImpl(args, false)
-}
-
-// isDockerManifestUnknownError is a copy of code from containers/image,
-// please update there first.
-func isDockerManifestUnknownError(err error) bool {
-	var ec dockerdistributionerrcode.ErrorCoder
-	if !errors.As(err, &ec) {
-		return false
-	}
-	return ec.ErrorCode() == dockerdistributionapi.ErrorCodeManifestUnknown
-}
-
-// isNotFoundImageError heuristically attempts to determine whether an error
-// is saying the remote source couldn't find the image (as opposed to an
-// authentication error, an I/O error etc.)
-// TODO drive this into containers/image properly
-func isNotFoundImageError(err error) bool {
-	return isDockerManifestUnknownError(err) ||
-		errors.Is(err, ocilayout.ImageNotFoundError{})
 }
 
 func (h *proxyHandler) openImageImpl(args []any, allowNotFound bool) (retReplyBuf replyBuf, retErr error) {

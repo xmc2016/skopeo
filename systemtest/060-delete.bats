@@ -24,7 +24,7 @@ function setup() {
     run_skopeo delete --tls-verify=false $localimg
 
     # make sure image is removed from registry
-    expected_rc=1
+    expected_rc=2
     run_skopeo $expected_rc inspect --tls-verify=false $localimg
 }
 

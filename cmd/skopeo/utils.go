@@ -12,9 +12,13 @@ import (
 	"github.com/containers/common/pkg/retry"
 	"github.com/containers/image/v5/directory"
 	"github.com/containers/image/v5/manifest"
+	ocilayout "github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/pkg/compression"
+	"github.com/containers/image/v5/storage"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
+	dockerdistributionerrcode "github.com/docker/distribution/registry/api/errcode"
+	dockerdistributionapi "github.com/docker/distribution/registry/api/v2"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -405,4 +409,24 @@ func promptForPassphrase(privateKeyFile string, stdin, stdout *os.File) (string,
 	}
 	fmt.Fprintf(stdout, "\n")
 	return string(passphrase), nil
+}
+
+// isNotFoundImageError heuristically attempts to determine whether an error
+// is saying the remote source couldn't find the image (as opposed to an
+// authentication error, an I/O error etc.)
+// TODO drive this into containers/image properly
+func isNotFoundImageError(err error) bool {
+	return isDockerManifestUnknownError(err) ||
+		errors.Is(err, storage.ErrNoSuchImage) ||
+		errors.Is(err, ocilayout.ImageNotFoundError{})
+}
+
+// isDockerManifestUnknownError is a copy of code from containers/image,
+// please update there first.
+func isDockerManifestUnknownError(err error) bool {
+	var ec dockerdistributionerrcode.ErrorCoder
+	if !errors.As(err, &ec) {
+		return false
+	}
+	return ec.ErrorCode() == dockerdistributionapi.ErrorCodeManifestUnknown
 }

@@ -114,6 +114,15 @@ Print the version number
 | [skopeo-standalone-verify(1)](skopeo-standalone-verify.1.md)| Verify an image signature.                                   |
 | [skopeo-sync(1)](skopeo-sync.1.md)| Synchronize images between registry repositories and local directories.                |
 
+## EXIT STATUS
+`skopeo` exits with status 0 on success, non-zero on error.
+
+Details about the exit statuses:
+
+**1** Generic error, details can be found in the error message.
+
+**2** The input image cannot be found. Note that this is best effort and for remote registries the status often cannot be reliably reported.
+
 ## FILES
   **/etc/containers/policy.json**
   Default trust policy file, if **--policy** is not specified.

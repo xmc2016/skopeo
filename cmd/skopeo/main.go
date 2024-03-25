@@ -129,6 +129,10 @@ func main() {
 	}
 	rootCmd, _ := createApp()
 	if err := rootCmd.Execute(); err != nil {
+		if isNotFoundImageError(err) {
+			logrus.StandardLogger().Log(logrus.FatalLevel, err)
+			logrus.Exit(2)
+		}
 		logrus.Fatal(err)
 	}
 }
