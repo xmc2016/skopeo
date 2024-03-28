@@ -19,7 +19,7 @@ go 1.19 // *****  ATTENTION  WARNING  CAUTION  DANGER  ******
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
-	github.com/containers/common v0.58.0
+	github.com/containers/common v0.58.1
 	github.com/containers/image/v5 v5.30.0
 	github.com/containers/ocicrypt v1.1.10
 	github.com/containers/storage v1.53.0
