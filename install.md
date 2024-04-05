@@ -157,12 +157,12 @@ Install the necessary dependencies:
 
 ```bash
 # Fedora:
-sudo dnf install gpgme-devel libassuan-devel btrfs-progs-devel device-mapper-devel
+sudo dnf install gpgme-devel libassuan-devel btrfs-progs-devel
 ```
 
 ```bash
 # Ubuntu (`libbtrfs-dev` requires Ubuntu 18.10 and above):
-sudo apt install libgpgme-dev libassuan-dev libbtrfs-dev libdevmapper-dev pkg-config
+sudo apt install libgpgme-dev libassuan-dev libbtrfs-dev pkg-config
 ```
 
 ```bash
@@ -172,12 +172,12 @@ brew install gpgme
 
 ```bash
 # openSUSE:
-sudo zypper install libgpgme-devel device-mapper-devel libbtrfs-devel glib2-devel
+sudo zypper install libgpgme-devel libbtrfs-devel glib2-devel
 ```
 
 ```bash
 # Arch Linux:
-sudo pacman -S base-devel gpgme device-mapper btrfs-progs
+sudo pacman -S base-devel gpgme btrfs-progs
 ```
 
 Make sure to clone this repository in your `GOPATH` - otherwise compilation fails.
@@ -267,7 +267,7 @@ sudo make install
 ### Building a static binary
 
 There have been efforts in the past to produce and maintain static builds, but the maintainers prefer to run Skopeo using distro packages or within containers. This is because static builds of Skopeo tend to be unreliable and functionally restricted. Specifically:
-- Some features of Skopeo depend on non-Go libraries like `libgpgme` and `libdevmapper`.
+- Some features of Skopeo depend on non-Go libraries like `libgpgme`.
 - Generating static Go binaries uses native Go libraries, which don't support e.g. `.local` or LDAP-based name resolution.
 
 That being said, if you would like to build Skopeo statically, you might be able to do it by combining all the following steps.
