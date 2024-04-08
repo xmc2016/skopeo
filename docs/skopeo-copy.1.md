@@ -220,6 +220,10 @@ The username to access the destination registry.
 
 The password to access the destination registry.
 
+**--image-parallel-copies** _n_
+
+Maximum number of image layers to be copied (pulled/pushed) simultaneously. Not setting this field will fall back to containers/image defaults.
+
 ## EXAMPLES
 
 To just copy an image from one registry to another:
