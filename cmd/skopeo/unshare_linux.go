@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/storage/pkg/unshare"
 	"github.com/syndtr/gocapability/capability"
-	"golang.org/x/exp/slices"
 )
 
 var neededCapabilities = []capability.Cap{
