@@ -1,4 +1,6 @@
-<img src="https://cdn.rawgit.com/containers/skopeo/main/docs/skopeo.svg" width="250" alt="Skopeo">
+<p align="center">
+   <img src="https://cdn.rawgit.com/containers/skopeo/main/docs/skopeo.svg" width="250" alt="Skopeo">
+</p>
 
 ----
 
