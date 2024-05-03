@@ -1,7 +1,7 @@
 % skopeo-standalone-verify(1)
 
 ## NAME
-skopeo\-standalone\-verify - Verify an image signature.
+skopeo\-standalone\-verify - Debugging tool - Verify an image signature from local files.
 
 ## SYNOPSIS
 **skopeo standalone-verify** _manifest_ _docker-reference_ _key-fingerprints_ _signature_
