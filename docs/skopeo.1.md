@@ -110,8 +110,8 @@ Print the version number
 | [skopeo-login(1)](skopeo-login.1.md)  | Login to a container registry. |
 | [skopeo-logout(1)](skopeo-logout.1.md)  | Logout of a container registry. |
 | [skopeo-manifest-digest(1)](skopeo-manifest-digest.1.md)    | Compute a manifest digest for a manifest-file and write it to standard output. |
-| [skopeo-standalone-sign(1)](skopeo-standalone-sign.1.md)    | Debugging tool - Publish and sign an image in one step.      |
-| [skopeo-standalone-verify(1)](skopeo-standalone-verify.1.md)| Verify an image signature.                                   |
+| [skopeo-standalone-sign(1)](skopeo-standalone-sign.1.md)    | Debugging tool - Sign an image locally without uploading.    |
+| [skopeo-standalone-verify(1)](skopeo-standalone-verify.1.md)| Debugging tool - Verify an image signature from local files. |
 | [skopeo-sync(1)](skopeo-sync.1.md)| Synchronize images between registry repositories and local directories.                |
 
 ## EXIT STATUS

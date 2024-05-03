@@ -213,8 +213,8 @@ Please read the [contribution guide](CONTRIBUTING.md) if you want to collaborate
 | [skopeo-login(1)](/docs/skopeo-login.1.md)         | Login to a container registry.                                                               |
 | [skopeo-logout(1)](/docs/skopeo-logout.1.md)       | Logout of a container registry.                                                              |
 | [skopeo-manifest-digest(1)](/docs/skopeo-manifest-digest.1.md)    | Compute a manifest digest for a manifest-file and write it to standard output.   |
-| [skopeo-standalone-sign(1)](/docs/skopeo-standalone-sign.1.md)    | Debugging tool - Publish and sign an image in one step.                                                         |
-| [skopeo-standalone-verify(1)](/docs/skopeo-standalone-verify.1.md)| Verify an image signature.                                                    |
+| [skopeo-standalone-sign(1)](/docs/skopeo-standalone-sign.1.md)    | Debugging tool - Sign an image locally without uploading.                     |
+| [skopeo-standalone-verify(1)](/docs/skopeo-standalone-verify.1.md)| Debugging tool - Verify an image signature from local files.                  |
 | [skopeo-sync(1)](/docs/skopeo-sync.1.md)           | Synchronize images between registry repositories and local directories.                      |
 
 License
