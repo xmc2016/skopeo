@@ -47,6 +47,8 @@ Skopeo works with API V2 container image registries such as [docker.io](https://
 For a detailed description how to install or build skopeo, see
 [install.md](./install.md).
 
+Skopeo is also available as a Container Image on [quay.io](https://quay.io/skopeo/stable).  For more information, see the [Skopeo Image](https://github.com/containers/image_build/blob/main/skopeo/README.md) page.
+
 ## Inspecting a repository
 `skopeo` is able to _inspect_ a repository on a container registry and fetch images layers.
 The _inspect_ command fetches the repository's manifest and it is able to show you a `docker inspect`-like
