@@ -81,7 +81,9 @@ registries without the need to pull them
 Summary: Tests for %{name}
 
 Requires: %{name} = %{epoch}:%{version}-%{release}
+%if %{defined fedora}
 Requires: bats
+%endif
 Requires: gnupg
 Requires: jq
 Requires: golang
