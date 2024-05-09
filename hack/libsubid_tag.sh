@@ -5,7 +5,8 @@ fi
 tmpdir="$PWD/tmp.$RANDOM"
 mkdir -p "$tmpdir"
 trap 'rm -fr "$tmpdir"' EXIT
-cc -o "$tmpdir"/libsubid_tag -x c - -l subid > /dev/null 2> /dev/null << EOF
+${CC:-cc} ${CPPFLAGS} ${CFLAGS} -o "$tmpdir"/libsubid_tag -x c - -l subid \
+	  > /dev/null 2> /dev/null << EOF
 #include <shadow/subid.h>
 #include <stdlib.h>
 int main() {
