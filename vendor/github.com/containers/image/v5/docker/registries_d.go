@@ -12,6 +12,7 @@ import (
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/containers/image/v5/internal/rootless"
 	"github.com/containers/image/v5/types"
+	"github.com/containers/storage/pkg/fileutils"
 	"github.com/containers/storage/pkg/homedir"
 	"github.com/opencontainers/go-digest"
 	"github.com/sirupsen/logrus"
@@ -93,7 +94,7 @@ func registriesDirPathWithHomeDir(sys *types.SystemContext, homeDir string) stri
 		return sys.RegistriesDirPath
 	}
 	userRegistriesDirPath := filepath.Join(homeDir, userRegistriesDir)
-	if _, err := os.Stat(userRegistriesDirPath); err == nil {
+	if err := fileutils.Exists(userRegistriesDirPath); err == nil {
 		return userRegistriesDirPath
 	}
 	if sys != nil && sys.RootForImplicitAbsolutePaths != "" {
@@ -139,7 +140,7 @@ func loadAndMergeConfig(dirPath string) (*registryConfiguration, error) {
 
 		if config.DefaultDocker != nil {
 			if mergedConfig.DefaultDocker != nil {
-				return nil, fmt.Errorf(`Error parsing signature storage configuration: "default-docker" defined both in "%s" and "%s"`,
+				return nil, fmt.Errorf(`Error parsing signature storage configuration: "default-docker" defined both in %q and %q`,
 					dockerDefaultMergedFrom, configPath)
 			}
 			mergedConfig.DefaultDocker = config.DefaultDocker
@@ -148,7 +149,7 @@ func loadAndMergeConfig(dirPath string) (*registryConfiguration, error) {
 
 		for nsName, nsConfig := range config.Docker { // includes config.Docker == nil
 			if _, ok := mergedConfig.Docker[nsName]; ok {
-				return nil, fmt.Errorf(`Error parsing signature storage configuration: "docker" namespace "%s" defined both in "%s" and "%s"`,
+				return nil, fmt.Errorf(`Error parsing signature storage configuration: "docker" namespace %q defined both in %q and %q`,
 					nsName, nsMergedFrom[nsName], configPath)
 			}
 			mergedConfig.Docker[nsName] = nsConfig
