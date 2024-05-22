@@ -93,10 +93,10 @@ MANPAGES ?= $(MANPAGES_MD:%.md=%)
 BTRFS_BUILD_TAG = $(shell hack/btrfs_tag.sh) $(shell hack/btrfs_installed_tag.sh)
 LIBSUBID_BUILD_TAG = $(shell hack/libsubid_tag.sh)
 LOCAL_BUILD_TAGS = $(BTRFS_BUILD_TAG) $(LIBSUBID_BUILD_TAG)
-BUILDTAGS += exclude_graphdriver_devicemapper $(LOCAL_BUILD_TAGS)
+BUILDTAGS += $(LOCAL_BUILD_TAGS)
 
 ifeq ($(DISABLE_CGO), 1)
-	override BUILDTAGS = exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp
+	override BUILDTAGS = exclude_graphdriver_btrfs containers_image_openpgp
 endif
 
 #   make all DEBUG=1

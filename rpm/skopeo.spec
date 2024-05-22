@@ -120,7 +120,7 @@ CGO_CFLAGS=$(echo $CGO_CFLAGS | sed 's/-specs=\/usr\/lib\/rpm\/redhat\/redhat-an
 export CGO_CFLAGS="$CGO_CFLAGS -m64 -mtune=generic -fcf-protection=full"
 %endif
 
-BASEBUILDTAGS="exclude_graphdriver_devicemapper $(hack/libsubid_tag.sh)"
+BASEBUILDTAGS="$(hack/libsubid_tag.sh)"
 %if %{defined build_with_btrfs}
 export BUILDTAGS="$BASEBUILDTAGS $(hack/btrfs_tag.sh) $(hack/btrfs_installed_tag.sh)"
 %else
