@@ -8,7 +8,7 @@ toolchain go1.21.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
-	github.com/containers/common v0.58.3
+	github.com/containers/common v0.59.0
 	github.com/containers/image/v5 v5.31.0
 	github.com/containers/ocicrypt v1.1.10
 	github.com/containers/storage v1.54.0
@@ -108,7 +108,7 @@ require (
 	github.com/sigstore/rekor v1.3.6 // indirect
 	github.com/sigstore/sigstore v1.8.3 // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
-	github.com/stefanberger/go-pkcs11uri v0.0.0-20201008174630-78d3cae3a980 // indirect
+	github.com/stefanberger/go-pkcs11uri v0.0.0-20230803200340-78284954bff6 // indirect
 	github.com/sylabs/sif/v2 v2.16.0 // indirect
 	github.com/tchap/go-patricia/v2 v2.3.1 // indirect
 	github.com/titanous/rocacheck v0.0.0-20171023193734-afe73141d399 // indirect
