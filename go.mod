@@ -11,7 +11,7 @@ require (
 	github.com/containers/common v0.59.2
 	github.com/containers/image/v5 v5.31.1
 	github.com/containers/ocicrypt v1.2.0
-	github.com/containers/storage v1.54.0
+	github.com/containers/storage v1.55.0
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0
@@ -28,9 +28,9 @@ require (
 
 require (
 	dario.cat/mergo v1.0.0 // indirect
-	github.com/BurntSushi/toml v1.3.2 // indirect
+	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/Microsoft/hcsshim v0.12.3 // indirect
+	github.com/Microsoft/hcsshim v0.12.5 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
@@ -40,7 +40,7 @@ require (
 	github.com/containers/libtrust v0.0.0-20230121012942-c1716e8a8d01 // indirect
 	github.com/coreos/go-oidc/v3 v3.10.0 // indirect
 	github.com/cyberphone/json-canonicalization v0.0.0-20231217050601-ba74d44ecf5f // indirect
-	github.com/cyphar/filepath-securejoin v0.2.5 // indirect
+	github.com/cyphar/filepath-securejoin v0.3.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/docker v26.1.3+incompatible // indirect
@@ -77,7 +77,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.17.8 // indirect
+	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/letsencrypt/boulder v0.0.0-20230907030200-6d76a0f91e1e // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
@@ -87,8 +87,8 @@ require (
 	github.com/mistifyio/go-zfs/v3 v3.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
-	github.com/moby/sys/mountinfo v0.7.1 // indirect
-	github.com/moby/sys/user v0.1.0 // indirect
+	github.com/moby/sys/mountinfo v0.7.2 // indirect
+	github.com/moby/sys/user v0.2.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
