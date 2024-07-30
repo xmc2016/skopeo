@@ -83,6 +83,7 @@ Summary: Tests for %{name}
 Requires: %{name} = %{epoch}:%{version}-%{release}
 %if %{defined fedora}
 Requires: bats
+Requires: fakeroot
 %endif
 Requires: gnupg
 Requires: jq
@@ -91,7 +92,6 @@ Requires: podman
 Requires: crun
 Requires: httpd-tools
 Requires: openssl
-Requires: fakeroot
 Requires: squashfs-tools
 
 %description tests
