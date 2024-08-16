@@ -29,7 +29,7 @@ rc=0
 # for a given skopeo-foo.1.md, the NAME should be 'skopeo-foo'
 for md in *.1.md;do
     # Read the first line after '## NAME'
-    name=$(egrep -A1 '^## NAME' $md|tail -1|awk '{print $1}' | tr -d \\\\)
+    name=$(grep -E -A1 '^## NAME' $md|tail -1|awk '{print $1}' | tr -d \\\\)
 
     expect=$(basename $md .1.md)
     if [ "$name" != "$expect" ]; then
@@ -45,7 +45,7 @@ done
 # Make sure the descriptive text in skopeo-foo.1.md matches the one
 # in the table in skopeo.1.md.
 for md in $(ls -1 *-*.1.md);do
-    desc=$(egrep -A1 '^## NAME' $md|tail -1|sed -E -e 's/^skopeo[^[:space:]]+ - //')
+    desc=$(grep -E -A1 '^## NAME' $md|tail -1|sed -E -e 's/^skopeo[^[:space:]]+ - //')
 
     # Find the descriptive text in the main skopeo man page.
     parent=skopeo.1.md
@@ -112,7 +112,7 @@ function compare_usage() {
 #
 # Make sure the SYNOPSIS line in skopeo-foo.1.md reads '**skopeo foo** ...'
 for md in *.1.md;do
-    synopsis=$(egrep -A1 '^#* SYNOPSIS' $md|tail -1)
+    synopsis=$(grep -E -A1 '^#* SYNOPSIS' $md|tail -1)
 
     # Command name must be bracketed by double asterisks; options and
     # arguments are bracketed by single ones.

@@ -29,6 +29,6 @@ $CONTAINER_RUNTIME run --rm \
     --entrypoint=/usr/share/automation/bin/cirrus-ci_env.py \
     quay.io/libpod/get_ci_vm:latest \
     --envs="Skopeo Test" /src/.cirrus.yml | \
-    egrep -m1 '^SKOPEO_CIDEV_CONTAINER_FQIN' | \
+    grep -E -m1 '^SKOPEO_CIDEV_CONTAINER_FQIN' | \
     awk -F "=" -e '{print $2}' | \
     tr -d \'\"

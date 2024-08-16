@@ -36,7 +36,7 @@ load helpers
     # the output of 'inspect' lists layer digests,
     # but not the digest of the config blob ($config_digest), if any.
     layers=$(jq -r '.Layers' <<<"$inspect_local")
-    for sha in $(find $workdir -type f | xargs -l1 basename | egrep '^[0-9a-f]{64}$'); do
+    for sha in $(find $workdir -type f | xargs -l1 basename | grep -E '^[0-9a-f]{64}$'); do
         if [ "sha256:$sha" != "$config_digest" ]; then
             expect_output --from="$layers" --substring "sha256:$sha" \
                         "Locally-extracted SHA file is present in 'inspect'"

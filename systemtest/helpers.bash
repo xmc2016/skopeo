@@ -317,7 +317,7 @@ start_registry() {
             die "start_registry() invoked with testuser but no testpassword"
         fi
 
-        if ! egrep -q "^$testuser:" $AUTHDIR/htpasswd; then
+        if ! grep -E -q "^$testuser:" $AUTHDIR/htpasswd; then
             htpasswd -Bbn $testuser $testpassword >> $AUTHDIR/htpasswd
         fi
 
