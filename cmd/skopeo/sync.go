@@ -20,6 +20,7 @@ import (
 	"github.com/containers/image/v5/directory"
 	"github.com/containers/image/v5/docker"
 	"github.com/containers/image/v5/docker/reference"
+	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/pkg/cli"
 	"github.com/containers/image/v5/pkg/cli/sigstore"
 	"github.com/containers/image/v5/signature/signer"
@@ -46,6 +47,7 @@ type syncOptions struct {
 	format                   commonFlag.OptionalString // Force conversion of the image to a specified format
 	source                   string                    // Source repository name
 	destination              string                    // Destination registry name
+	digestFile               string                    // Write digest to this file
 	scoped                   bool                      // When true, namespace copied images at destination using the source repository name
 	all                      bool                      // Copy all of the images if an image in the source is a list
 	dryRun                   bool                      // Don't actually copy anything, just output what it would have done
@@ -121,6 +123,7 @@ See skopeo-sync(1) for details.
 	flags.StringVarP(&opts.destination, "dest", "d", "", "DESTINATION transport type")
 	flags.BoolVar(&opts.scoped, "scoped", false, "Images at DESTINATION are prefix using the full source image path as scope")
 	flags.StringVar(&opts.appendSuffix, "append-suffix", "", "String to append to DESTINATION tags")
+	flags.StringVar(&opts.digestFile, "digestfile", "", "Write the digests and Image References of the resulting images to the specified file, separated by newlines")
 	flags.BoolVarP(&opts.all, "all", "a", false, "Copy all images if SOURCE-IMAGE is a list")
 	flags.BoolVar(&opts.dryRun, "dry-run", false, "Run without actually copying data")
 	flags.BoolVar(&opts.preserveDigests, "preserve-digests", false, "Preserve digests of images and lists")
@@ -723,10 +726,24 @@ func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 		logrus.Warn("Running in dry-run mode")
 	}
 
+	var digestFile *os.File
+	if opts.digestFile != "" && !opts.dryRun {
+		digestFile, err = os.OpenFile(opts.digestFile, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return fmt.Errorf("Error creating digest file: %w", err)
+		}
+		defer func() {
+			if err := digestFile.Close(); err != nil {
+				retErr = noteCloseFailure(retErr, "closing digest file", err)
+			}
+		}()
+	}
+
 	for _, srcRepo := range srcRepoList {
 		options.SourceCtx = srcRepo.Context
 		for counter, ref := range srcRepo.ImageRefs {
 			var destSuffix string
+			var manifestBytes []byte
 			switch ref.Transport() {
 			case docker.Transport:
 				// docker -> dir or docker -> docker
@@ -758,7 +775,7 @@ func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 			} else {
 				logrus.WithFields(fromToFields).Infof("Copying image ref %d/%d", counter+1, len(srcRepo.ImageRefs))
 				if err = retry.IfNecessary(ctx, func() error {
-					_, err = copy.Image(ctx, policyContext, destRef, ref, &options)
+					manifestBytes, err = copy.Image(ctx, policyContext, destRef, ref, &options)
 					return err
 				}, opts.retryOpts); err != nil {
 					if !opts.keepGoing {
@@ -770,7 +787,19 @@ func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 					logrus.WithError(err).Errorf("Error copying ref %q", transports.ImageName(ref))
 					continue
 				}
+				// Ensure that we log the manifest digest to a file only if the copy operation was successful
+				if opts.digestFile != "" {
+					manifestDigest, err := manifest.Digest(manifestBytes)
+					if err != nil {
+						return err
+					}
+					outputStr := fmt.Sprintf("%s %s", manifestDigest.String(), transports.ImageName(destRef))
+					if _, err = digestFile.WriteString(outputStr + "\n"); err != nil {
+						return fmt.Errorf("Failed to write digest to file %q: %w", opts.digestFile, err)
+					}
+				}
 			}
+
 			imagesNumber++
 		}
 	}

@@ -68,6 +68,16 @@ Print usage statement.
 
 **--append-suffix** _tag-suffix_ String to append to destination tags.
 
+**--digestfile** _path_
+
+After copying the images from source, write the digest of the resulting images along with Image Reference.
+
+```
+sha256:bf91f90823248017a4f920fb541727fa8368dc6cf377a7debbd271cf6a31c8a7 docker://myhost.com/alpine:edge
+sha256:31603596830fc7e56753139f9c2c6bd3759e48a850659506ebfb885d1cf3aef5 docker://myhost.com/postgres:14.3
+
+```
+
 **--preserve-digests**
 
 Preserve the digests during copying. Fail if the digest cannot be preserved.
