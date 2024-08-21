@@ -7,7 +7,7 @@ go 1.21.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
-	github.com/containers/common v0.60.1
+	github.com/containers/common v0.60.2
 	github.com/containers/image/v5 v5.32.2
 	github.com/containers/ocicrypt v1.2.0
 	github.com/containers/storage v1.55.0
