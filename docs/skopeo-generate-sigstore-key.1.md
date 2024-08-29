@@ -13,7 +13,7 @@ The private key is encrypted with a passphrase;
 if one is not provided using an option, this command prompts for it interactively.
 
 The private key is written to _prefix_**.private** .
-The private key is written to _prefix_**.pub** .
+The public key is written to _prefix_**.pub** .
 
 ## OPTIONS
 
