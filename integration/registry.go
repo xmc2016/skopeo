@@ -30,7 +30,7 @@ func setupRegistryV2At(t *testing.T, url string, auth, schema1 bool) *testRegist
 	require.NoError(t, err)
 
 	// Wait for registry to be ready to serve requests.
-	for i := 0; i != 50; i++ {
+	for range 50 {
 		if err = reg.Ping(); err == nil {
 			break
 		}
