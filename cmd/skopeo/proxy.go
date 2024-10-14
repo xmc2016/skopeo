@@ -784,7 +784,7 @@ func (h *proxyHandler) processRequest(readBytes []byte) (rb replyBuf, terminate 
 		err = fmt.Errorf("invalid request: %v", err)
 		return
 	}
-	logrus.Debugf("Executing method %s", req.Method, err)
+	logrus.Debugf("Executing method %s", req.Method)
 
 	// Dispatch on the method
 	switch req.Method {
