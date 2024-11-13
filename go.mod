@@ -12,7 +12,7 @@ require (
 	github.com/containers/ocicrypt v1.2.0
 	github.com/containers/storage v1.56.0
 	github.com/docker/distribution v2.8.3+incompatible
-	github.com/moby/sys/capability v0.3.0
+	github.com/moby/sys/capability v0.4.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/opencontainers/image-tools v1.0.0-rc3
