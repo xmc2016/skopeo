@@ -44,3 +44,18 @@ func TestTLSVerifyConfig(t *testing.T) {
 	err := yaml.Unmarshal([]byte(`tls-verify: "not a valid bool"`), &config)
 	assert.Error(t, err)
 }
+
+func TestSync(t *testing.T) {
+	// Invalid command-line arguments
+	for _, args := range [][]string{
+		{},
+		{"a1"},
+		{"a1", "a2", "a3"},
+	} {
+		out, err := runSkopeo(append([]string{"sync"}, args...)...)
+		assertTestFailed(t, out, err, "Exactly two arguments expected")
+	}
+
+	// FIXME: Much more test coverage
+	// Actual feature tests exist in integration and systemtest
+}

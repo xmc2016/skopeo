@@ -54,3 +54,17 @@ func TestDockerRepositoryReferenceParserDrift(t *testing.T) {
 		}
 	}
 }
+
+func TestListTags(t *testing.T) {
+	// Invalid command-line arguments
+	for _, args := range [][]string{
+		{},
+		{"a1", "a2"},
+	} {
+		out, err := runSkopeo(append([]string{"list-tags"}, args...)...)
+		assertTestFailed(t, out, err, "Exactly one non-option argument expected")
+	}
+
+	// FIXME: Much more test coverage
+	// Actual feature tests exist in systemtest
+}
