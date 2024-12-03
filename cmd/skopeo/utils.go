@@ -26,7 +26,7 @@ import (
 	"golang.org/x/term"
 )
 
-// errorShouldDisplayUsage is a subtype of error used by command handlers to indicate that cli.ShowSubcommandHelp should be called.
+// errorShouldDisplayUsage is a subtype of error used by command handlers to indicate that the command’s help should be included.
 type errorShouldDisplayUsage struct {
 	error
 }
@@ -62,7 +62,8 @@ func commandAction(handler func(args []string, stdout io.Writer) error) func(cmd
 		err := handler(args, c.OutOrStdout())
 		var shouldDisplayUsage errorShouldDisplayUsage
 		if errors.As(err, &shouldDisplayUsage) {
-			return c.Help()
+			c.SetOut(c.ErrOrStderr()) // This mutates c, but we are failing anyway.
+			_ = c.Help()              // Even if this failed, we prefer to report the original error
 		}
 		return err
 	}
