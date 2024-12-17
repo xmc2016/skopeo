@@ -9,7 +9,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/containers/common v0.61.0
 	github.com/containers/image/v5 v5.33.0
-	github.com/containers/ocicrypt v1.2.0
+	github.com/containers/ocicrypt v1.2.1
 	github.com/containers/storage v1.56.0
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/moby/sys/capability v0.4.0
@@ -109,6 +109,7 @@ require (
 	github.com/sigstore/rekor v1.3.6 // indirect
 	github.com/sigstore/sigstore v1.8.9 // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
+	github.com/smallstep/pkcs7 v0.1.1 // indirect
 	github.com/stefanberger/go-pkcs11uri v0.0.0-20230803200340-78284954bff6 // indirect
 	github.com/sylabs/sif/v2 v2.19.1 // indirect
 	github.com/tchap/go-patricia/v2 v2.3.1 // indirect
@@ -120,20 +121,19 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	go.mongodb.org/mongo-driver v1.14.0 // indirect
-	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.53.0 // indirect
 	go.opentelemetry.io/otel v1.28.0 // indirect
 	go.opentelemetry.io/otel/metric v1.28.0 // indirect
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
-	golang.org/x/crypto v0.29.0 // indirect
+	golang.org/x/crypto v0.30.0 // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/oauth2 v0.23.0 // indirect
-	golang.org/x/sync v0.9.0 // indirect
+	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/text v0.20.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
-	google.golang.org/grpc v1.67.0 // indirect
+	google.golang.org/grpc v1.68.1 // indirect
 	google.golang.org/protobuf v1.35.1 // indirect
 )
