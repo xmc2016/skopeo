@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
 	commonFlag "github.com/containers/common/pkg/flag"
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/types"
@@ -107,6 +106,8 @@ func createApp() (*cobra.Command, *globalOptions) {
 		standaloneSignCmd(),
 		standaloneVerifyCmd(),
 		tagsCmd(&opts),
+		reposCmd(&opts),
+		listAllCmd(&opts), // 添加 list-all 命令
 		untrustedSignatureDumpCmd(),
 	)
 	return rootCommand, &opts
@@ -183,3 +184,4 @@ func (opts *globalOptions) newSystemContext() *types.SystemContext {
 	}
 	return ctx
 }
+
