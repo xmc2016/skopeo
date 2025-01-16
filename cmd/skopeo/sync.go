@@ -2,58 +2,55 @@ package main
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
 	"regexp"
-	"slices"
 	"strings"
 
-	"github.com/Masterminds/semver/v3"
 	commonFlag "github.com/containers/common/pkg/flag"
 	"github.com/containers/common/pkg/retry"
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/directory"
 	"github.com/containers/image/v5/docker"
 	"github.com/containers/image/v5/docker/reference"
-	"github.com/containers/image/v5/manifest"
+	oci "github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/pkg/cli"
-	"github.com/containers/image/v5/pkg/cli/sigstore"
-	"github.com/containers/image/v5/signature/signer"
 	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/types"
 	"github.com/opencontainers/go-digest"
+	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 )
 
 // syncOptions contains information retrieved from the skopeo sync command line.
 type syncOptions struct {
-	global                   *globalOptions // Global (not command dependent) skopeo options
-	deprecatedTLSVerify      *deprecatedTLSVerifyOption
-	srcImage                 *imageOptions     // Source image options
-	destImage                *imageDestOptions // Destination image options
-	retryOpts                *retry.Options
-	removeSignatures         bool                      // Do not copy signatures from the source image
-	signByFingerprint        string                    // Sign the image using a GPG key with the specified fingerprint
-	signBySigstoreParamFile  string                    // Sign the image using a sigstore signature per configuration in a param file
-	signBySigstorePrivateKey string                    // Sign the image using a sigstore private key
-	signPassphraseFile       string                    // Path pointing to a passphrase file when signing
-	format                   commonFlag.OptionalString // Force conversion of the image to a specified format
-	source                   string                    // Source repository name
-	destination              string                    // Destination registry name
-	digestFile               string                    // Write digest to this file
-	scoped                   bool                      // When true, namespace copied images at destination using the source repository name
-	all                      bool                      // Copy all of the images if an image in the source is a list
-	dryRun                   bool                      // Don't actually copy anything, just output what it would have done
-	preserveDigests          bool                      // Preserve digests during sync
-	keepGoing                bool                      // Whether or not to abort the sync if there are any errors during syncing the images
-	appendSuffix             string                    // Suffix to append to destination image tag
+	global              *globalOptions // Global (not command dependent) skopeo options
+	deprecatedTLSVerify *deprecatedTLSVerifyOption
+	srcImage            *imageOptions     // Source image options
+	destImage           *imageDestOptions // Destination image options
+	retryOpts           *retry.RetryOptions
+	cryptOpts           *ociCryptOptions
+	removeSignatures    bool                      // Do not copy signatures from the source image
+	signByFingerprint   string                    // Sign the image using a GPG key with the specified fingerprint
+	signPassphraseFile  string                    // Path pointing to a passphrase file when signing
+	format              commonFlag.OptionalString // Force conversion of the image to a specified format
+	source              string                    // Source repository name
+	destination         string                    // Destination registry name
+	scoped              bool                      // When true, namespace copied images at destination using the source repository name
+	all                 bool                      // Copy all of the images if an image in the source is a list
+	dryRun              bool                      // Don't actually copy anything, just output what it would have done
+	preserveDigests     bool                      // Preserve digests during sync
+	keepGoing           bool                      // Whether or not to abort the sync if there are any errors during syncing the images
+	encryptLayer        []int                     // The list of layers to encrypt
+	encryptionKeys      []string                  // Keys needed to encrypt the image
+	decryptionKeys      []string                  // Keys needed to decrypt the image
 }
 
 // repoDescriptor contains information of a single repository used as a sync source.
@@ -74,7 +71,6 @@ type tlsVerifyConfig struct {
 type registrySyncConfig struct {
 	Images           map[string][]string    // Images map images name to slices with the images' references (tags, digests)
 	ImagesByTagRegex map[string]string      `yaml:"images-by-tag-regex"` // Images map images name to regular expression with the images' tags
-	ImagesBySemver   map[string]string      `yaml:"images-by-semver"`    // ImagesBySemver maps a repository to a semver constraint (e.g. '>=3.14') to match images' tags to
 	Credentials      types.DockerAuthConfig // Username and password used to authenticate with the registry
 	TLSVerify        tlsVerifyConfig        `yaml:"tls-verify"` // TLS verification mode (enabled by default)
 	CertDir          string                 `yaml:"cert-dir"`   // Path to the TLS certificates of the registry
@@ -86,9 +82,10 @@ type sourceConfig map[string]registrySyncConfig
 func syncCmd(global *globalOptions) *cobra.Command {
 	sharedFlags, sharedOpts := sharedImageFlags()
 	deprecatedTLSVerifyFlags, deprecatedTLSVerifyOpt := deprecatedTLSVerifyFlags()
-	srcFlags, srcOpts := dockerImageFlags(global, sharedOpts, deprecatedTLSVerifyOpt, "src-", "screds")
-	destFlags, destOpts := dockerImageFlags(global, sharedOpts, deprecatedTLSVerifyOpt, "dest-", "dcreds")
+	srcFlags, srcOpts := imageFlags(global, sharedOpts, deprecatedTLSVerifyOpt, "src-", "screds")
+	destFlags, destOpts := imageFlags(global, sharedOpts, deprecatedTLSVerifyOpt, "dest-", "dcreds")
 	retryFlags, retryOpts := retryFlags()
+	cryptFlags, cryptOpts := cryptFlags()
 
 	opts := syncOptions{
 		global:              global,
@@ -96,6 +93,7 @@ func syncCmd(global *globalOptions) *cobra.Command {
 		srcImage:            srcOpts,
 		destImage:           &imageDestOptions{imageOptions: destOpts},
 		retryOpts:           retryOpts,
+		cryptOpts:           cryptOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -103,8 +101,8 @@ func syncCmd(global *globalOptions) *cobra.Command {
 		Short: "Synchronize one or more images from one location to another",
 		Long: `Copy all the images from a SOURCE to a DESTINATION.
 
-Allowed SOURCE transports (specified with --src): docker, dir, yaml.
-Allowed DESTINATION transports (specified with --dest): docker, dir.
+Allowed SOURCE transports (specified with --src): docker, dir, yaml, oci.
+Allowed DESTINATION transports (specified with --dest): docker, dir, oci.
 
 See skopeo-sync(1) for details.
 `,
@@ -115,15 +113,11 @@ See skopeo-sync(1) for details.
 	flags := cmd.Flags()
 	flags.BoolVar(&opts.removeSignatures, "remove-signatures", false, "Do not copy signatures from SOURCE images")
 	flags.StringVar(&opts.signByFingerprint, "sign-by", "", "Sign the image using a GPG key with the specified `FINGERPRINT`")
-	flags.StringVar(&opts.signBySigstoreParamFile, "sign-by-sigstore", "", "Sign the image using a sigstore parameter file at `PATH`")
-	flags.StringVar(&opts.signBySigstorePrivateKey, "sign-by-sigstore-private-key", "", "Sign the image using a sigstore private key at `PATH`")
 	flags.StringVar(&opts.signPassphraseFile, "sign-passphrase-file", "", "File that contains a passphrase for the --sign-by key")
 	flags.VarP(commonFlag.NewOptionalStringValue(&opts.format), "format", "f", `MANIFEST TYPE (oci, v2s1, or v2s2) to use when syncing image(s) to a destination (default is manifest type of source, with fallbacks)`)
 	flags.StringVarP(&opts.source, "src", "s", "", "SOURCE transport type")
 	flags.StringVarP(&opts.destination, "dest", "d", "", "DESTINATION transport type")
 	flags.BoolVar(&opts.scoped, "scoped", false, "Images at DESTINATION are prefix using the full source image path as scope")
-	flags.StringVar(&opts.appendSuffix, "append-suffix", "", "String to append to DESTINATION tags")
-	flags.StringVar(&opts.digestFile, "digestfile", "", "Write the digests and Image References of the resulting images to the specified file, separated by newlines")
 	flags.BoolVarP(&opts.all, "all", "a", false, "Copy all images if SOURCE-IMAGE is a list")
 	flags.BoolVar(&opts.dryRun, "dry-run", false, "Run without actually copying data")
 	flags.BoolVar(&opts.preserveDigests, "preserve-digests", false, "Preserve digests of images and lists")
@@ -133,16 +127,17 @@ See skopeo-sync(1) for details.
 	flags.AddFlagSet(&srcFlags)
 	flags.AddFlagSet(&destFlags)
 	flags.AddFlagSet(&retryFlags)
+	flags.AddFlagSet(&cryptFlags)
 	return cmd
 }
 
 // UnmarshalYAML is the implementation of the Unmarshaler interface method
-// for the tlsVerifyConfig type.
+// method for the tlsVerifyConfig type.
 // It unmarshals the 'tls-verify' YAML key so that, when they key is not
 // specified, tls verification is enforced.
-func (tls *tlsVerifyConfig) UnmarshalYAML(value *yaml.Node) error {
+func (tls *tlsVerifyConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var verify bool
-	if err := value.Decode(&verify); err != nil {
+	if err := unmarshal(&verify); err != nil {
 		return err
 	}
 
@@ -160,7 +155,7 @@ func newSourceConfig(yamlFile string) (sourceConfig, error) {
 	}
 	err = yaml.Unmarshal(source, &cfg)
 	if err != nil {
-		return cfg, fmt.Errorf("Failed to unmarshal %q: %w", yamlFile, err)
+		return cfg, errors.Wrapf(err, "Failed to unmarshal %q", yamlFile)
 	}
 	return cfg, nil
 }
@@ -172,7 +167,7 @@ func parseRepositoryReference(input string) (reference.Named, error) {
 		return nil, err
 	}
 	if !reference.IsNameOnly(ref) {
-		return nil, errors.New("input names a reference, not a repository")
+		return nil, errors.Errorf("input names a reference, not a repository")
 	}
 	return ref, nil
 }
@@ -180,35 +175,31 @@ func parseRepositoryReference(input string) (reference.Named, error) {
 // destinationReference creates an image reference using the provided transport.
 // It returns a image reference to be used as destination of an image copy and
 // any error encountered.
-func destinationReference(destination string, transport string) (types.ImageReference, error) {
-	var imageTransport types.ImageTransport
+func destinationReference(destination string, destSuffix string, transport string) (types.ImageReference, error) {
 
+	var destRef types.ImageReference
+	var destRefErr error
+
+	destString := path.Join(destination, destSuffix)
 	switch transport {
 	case docker.Transport.Name():
-		destination = fmt.Sprintf("//%s", destination)
-		imageTransport = docker.Transport
+		destRef, destRefErr = docker.Transport.ParseReference(fmt.Sprintf("//%s", destString))
 	case directory.Transport.Name():
-		_, err := os.Stat(destination)
-		if err == nil {
-			return nil, fmt.Errorf("Refusing to overwrite destination directory %q", destination)
+		if err := checkExistAndMkdir(destString); err != nil {
+			return nil, err
 		}
-		if !os.IsNotExist(err) {
-			return nil, fmt.Errorf("Destination directory could not be used: %w", err)
-		}
-		// the directory holding the image must be created here
-		if err = os.MkdirAll(destination, 0755); err != nil {
-			return nil, fmt.Errorf("Error creating directory for image %s: %w", destination, err)
-		}
-		imageTransport = directory.Transport
+		destRef, destRefErr = directory.NewReference(destString)
+	case oci.Transport.Name():
+		destRef, destRefErr = oci.NewReference(destination, destSuffix)
 	default:
-		return nil, fmt.Errorf("%q is not a valid destination transport", transport)
+		return nil, errors.Errorf("%q is not a valid destination transport", transport)
 	}
-	logrus.Debugf("Destination for transport %q: %s", transport, destination)
 
-	destRef, err := imageTransport.ParseReference(destination)
-	if err != nil {
-		return nil, fmt.Errorf("Cannot obtain a valid image reference for transport %q and reference %q: %w", imageTransport.Name(), destination, err)
+	if destRefErr != nil {
+		return nil, errors.Wrapf(destRefErr, "Cannot obtain a valid image reference for transport %q and reference %q", transport, destString)
 	}
+
+	logrus.Debugf("Destination for transport %q: %s", transport, destRef.StringWithinTransport())
 
 	return destRef, nil
 }
@@ -227,8 +218,16 @@ func getImageTags(ctx context.Context, sysCtx *types.SystemContext, repoRef refe
 		return nil, err // Should never happen for a reference with tag and no digest
 	}
 	tags, err := docker.GetRepositoryTags(ctx, sysCtx, dockerRef)
-	if err != nil {
-		return nil, fmt.Errorf("Error determining repository tags for repo %s: %w", name, err)
+
+	switch err := err.(type) {
+	case nil:
+		break
+	case docker.ErrUnauthorizedForCredentials:
+		// Some registries may decide to block the "list all tags" endpoint.
+		// Gracefully allow the sync to continue in this case.
+		logrus.Warnf("Registry disallows tag list retrieval: %s", err)
+	default:
+		return tags, errors.Wrapf(err, "Error determining repository tags for image %s", name)
 	}
 
 	return tags, nil
@@ -248,15 +247,11 @@ func imagesToCopyFromRepo(sys *types.SystemContext, repoRef reference.Named) ([]
 	for _, tag := range tags {
 		taggedRef, err := reference.WithTag(repoRef, tag)
 		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"repo": repoRef.Name(),
-				"tag":  tag,
-			}).Errorf("Error creating a tagged reference from registry tag list: %v", err)
-			continue
+			return nil, errors.Wrapf(err, "Error creating a reference for repository %s and tag %q", repoRef.Name(), tag)
 		}
 		ref, err := docker.NewReference(taggedRef)
 		if err != nil {
-			return nil, fmt.Errorf("Cannot obtain a valid image reference for transport %q and reference %s: %w", docker.Transport.Name(), taggedRef.String(), err)
+			return nil, errors.Wrapf(err, "Cannot obtain a valid image reference for transport %q and reference %s", docker.Transport.Name(), taggedRef.String())
 		}
 		sourceReferences = append(sourceReferences, ref)
 	}
@@ -269,15 +264,15 @@ func imagesToCopyFromRepo(sys *types.SystemContext, repoRef reference.Named) ([]
 // and any error encountered.
 func imagesToCopyFromDir(dirPath string) ([]types.ImageReference, error) {
 	var sourceReferences []types.ImageReference
-	err := filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if !d.IsDir() && d.Name() == "manifest.json" {
+		if !info.IsDir() && info.Name() == "manifest.json" {
 			dirname := filepath.Dir(path)
 			ref, err := directory.Transport.ParseReference(dirname)
 			if err != nil {
-				return fmt.Errorf("Cannot obtain a valid image reference for transport %q and reference %q: %w", directory.Transport.Name(), dirname, err)
+				return errors.Wrapf(err, "Cannot obtain a valid image reference for transport %q and reference %q", directory.Transport.Name(), dirname)
 			}
 			sourceReferences = append(sourceReferences, ref)
 			return filepath.SkipDir
@@ -287,7 +282,37 @@ func imagesToCopyFromDir(dirPath string) ([]types.ImageReference, error) {
 
 	if err != nil {
 		return sourceReferences,
-			fmt.Errorf("Error walking the path %q: %w", dirPath, err)
+			errors.Wrapf(err, "Error walking the path %q", dirPath)
+	}
+
+	return sourceReferences, nil
+}
+
+// imagesToCopyFromOci builds a list of image references from the images found
+// in the source directory.
+// It returns an image reference slice with as many elements as the images found
+// and any error encountered.
+func imagesToCopyFromOci(dirPath string) ([]types.ImageReference, error) {
+
+	var sourceReferences []types.ImageReference
+
+	indexJSON, err := os.Open(path.Join(dirPath, "index.json"))
+	if err != nil {
+		return sourceReferences, errors.Wrapf(err, "Cannot open index.json for transport %q and Path: %q", oci.Transport.Name(), dirPath)
+	}
+	defer indexJSON.Close()
+
+	index := &imgspecv1.Index{}
+	if err := json.NewDecoder(indexJSON).Decode(index); err != nil {
+		return sourceReferences, errors.Wrapf(err, "Cannot decode index.json for transport %q and Path: %q", oci.Transport.Name(), dirPath)
+	}
+
+	for _, md := range index.Manifests {
+		ref, err := oci.NewReference(dirPath, md.Annotations[imgspecv1.AnnotationRefName])
+		if err != nil {
+			return sourceReferences, errors.Wrapf(err, "Cannot obtain a valid image reference for transport %q and reference %q", directory.Transport.Name(), dirPath)
+		}
+		sourceReferences = append(sourceReferences, ref)
 	}
 
 	return sourceReferences, nil
@@ -309,14 +334,6 @@ func imagesToCopyFromRegistry(registryName string, cfg registrySyncConfig, sourc
 		serverCtx.DockerAuthConfig = &cfg.Credentials
 	}
 	var repoDescList []repoDescriptor
-
-	if len(cfg.Images) == 0 && len(cfg.ImagesByTagRegex) == 0 && len(cfg.ImagesBySemver) == 0 {
-		logrus.WithFields(logrus.Fields{
-			"registry": registryName,
-		}).Warn("No images specified for registry")
-		return repoDescList, nil
-	}
-
 	for imageName, refs := range cfg.Images {
 		repoLogger := logrus.WithFields(logrus.Fields{
 			"repo":     imageName,
@@ -381,144 +398,61 @@ func imagesToCopyFromRegistry(registryName string, cfg registrySyncConfig, sourc
 			Context:   serverCtx})
 	}
 
-	// include repository descriptors for cfg.ImagesByTagRegex
-	{
-		filterCollection, err := tagRegexFilterCollection(cfg.ImagesByTagRegex)
-		if err != nil {
-			logrus.Error(err)
-		} else {
-			additionalRepoDescList := filterSourceReferences(serverCtx, registryName, filterCollection)
-			repoDescList = append(repoDescList, additionalRepoDescList...)
-		}
-	}
-
-	// include repository descriptors for cfg.ImagesBySemver
-	{
-		filterCollection, err := semverFilterCollection(cfg.ImagesBySemver)
-		if err != nil {
-			logrus.Error(err)
-		} else {
-			additionalRepoDescList := filterSourceReferences(serverCtx, registryName, filterCollection)
-			repoDescList = append(repoDescList, additionalRepoDescList...)
-		}
-	}
-
-	return repoDescList, nil
-}
-
-// filterFunc is a function used to limit the initial set of image references
-// using tags, patterns, semver, etc.
-type filterFunc func(*logrus.Entry, types.ImageReference) bool
-
-// filterCollection is a map of repository names to filter functions.
-type filterCollection map[string]filterFunc
-
-// filterSourceReferences lists tags for images specified in the collection and
-// filters them using assigned filter functions.
-// It returns a list of repoDescriptors.
-func filterSourceReferences(sys *types.SystemContext, registryName string, collection filterCollection) []repoDescriptor {
-	var repoDescList []repoDescriptor
-	for repoName, filter := range collection {
-		logger := logrus.WithFields(logrus.Fields{
-			"repo":     repoName,
+	for imageName, tagRegex := range cfg.ImagesByTagRegex {
+		repoLogger := logrus.WithFields(logrus.Fields{
+			"repo":     imageName,
 			"registry": registryName,
 		})
-
-		repoRef, err := parseRepositoryReference(fmt.Sprintf("%s/%s", registryName, repoName))
+		repoRef, err := parseRepositoryReference(fmt.Sprintf("%s/%s", registryName, imageName))
 		if err != nil {
-			logger.Error("Error parsing repository name, skipping")
+			repoLogger.Error("Error parsing repository name, skipping")
 			logrus.Error(err)
 			continue
 		}
 
-		logger.Info("Processing repo")
+		repoLogger.Info("Processing repo")
 
 		var sourceReferences []types.ImageReference
 
-		logger.Info("Querying registry for image tags")
-		sourceReferences, err = imagesToCopyFromRepo(sys, repoRef)
+		tagReg, err := regexp.Compile(tagRegex)
 		if err != nil {
-			logger.Error("Error processing repo, skipping")
+			repoLogger.WithFields(logrus.Fields{
+				"regex": tagRegex,
+			}).Error("Error parsing regex, skipping")
 			logrus.Error(err)
 			continue
 		}
 
-		var filteredSourceReferences []types.ImageReference
-		for _, ref := range sourceReferences {
-			if filter(logger, ref) {
-				filteredSourceReferences = append(filteredSourceReferences, ref)
-			}
-		}
-
-		if len(filteredSourceReferences) == 0 {
-			logger.Warnf("No refs to sync found")
+		repoLogger.Info("Querying registry for image tags")
+		allSourceReferences, err := imagesToCopyFromRepo(serverCtx, repoRef)
+		if err != nil {
+			repoLogger.Error("Error processing repo, skipping")
+			logrus.Error(err)
 			continue
 		}
 
+		repoLogger.Infof("Start filtering using the regular expression: %v", tagRegex)
+		for _, sReference := range allSourceReferences {
+			tagged, isTagged := sReference.DockerReference().(reference.Tagged)
+			if !isTagged {
+				repoLogger.Errorf("Internal error, reference %s does not have a tag, skipping", sReference.DockerReference())
+				continue
+			}
+			if tagReg.MatchString(tagged.Tag()) {
+				sourceReferences = append(sourceReferences, sReference)
+			}
+		}
+
+		if len(sourceReferences) == 0 {
+			repoLogger.Warnf("No refs to sync found")
+			continue
+		}
 		repoDescList = append(repoDescList, repoDescriptor{
-			ImageRefs: filteredSourceReferences,
-			Context:   sys,
-		})
-	}
-	return repoDescList
-}
-
-// tagRegexFilterCollection converts a map of (repository name, tag regex) pairs
-// into a filterCollection, which is a map of (repository name, filter function)
-// pairs.
-func tagRegexFilterCollection(collection map[string]string) (filterCollection, error) {
-	filters := filterCollection{}
-
-	for repoName, tagRegex := range collection {
-		pattern, err := regexp.Compile(tagRegex)
-		if err != nil {
-			return nil, err
-		}
-
-		f := func(logger *logrus.Entry, sourceReference types.ImageReference) bool {
-			tagged, isTagged := sourceReference.DockerReference().(reference.Tagged)
-			if !isTagged {
-				logger.Errorf("Internal error, reference %s does not have a tag, skipping", sourceReference.DockerReference())
-				return false
-			}
-			return pattern.MatchString(tagged.Tag())
-		}
-		filters[repoName] = f
+			ImageRefs: sourceReferences,
+			Context:   serverCtx})
 	}
 
-	return filters, nil
-}
-
-// semverFilterCollection converts a map of (repository name, array of semver constraints) pairs
-// into a filterCollection, which is a map of (repository name, filter function)
-// pairs.
-func semverFilterCollection(collection map[string]string) (filterCollection, error) {
-	filters := filterCollection{}
-
-	for repoName, constraintString := range collection {
-		constraint, err := semver.NewConstraint(constraintString)
-		if err != nil {
-			return nil, err
-		}
-
-		f := func(logger *logrus.Entry, sourceReference types.ImageReference) bool {
-			tagged, isTagged := sourceReference.DockerReference().(reference.Tagged)
-			if !isTagged {
-				logger.Errorf("Internal error, reference %s does not have a tag, skipping", sourceReference.DockerReference())
-				return false
-			}
-			tagVersion, err := semver.NewVersion(tagged.Tag())
-			if err != nil {
-				logger.Tracef("Tag %q cannot be parsed as semver, skipping", tagged.Tag())
-				return false
-			}
-			return constraint.Check(tagVersion)
-		}
-
-		filters[repoName] = f
-	}
-
-	return filters, nil
+	return repoDescList, nil
 }
 
 // imagesToCopy retrieves all the images to copy from a specified sync source
@@ -536,7 +470,7 @@ func imagesToCopy(source string, transport string, sourceCtx *types.SystemContex
 		}
 		named, err := reference.ParseNormalizedNamed(source) // May be a repository or an image.
 		if err != nil {
-			return nil, fmt.Errorf("Cannot obtain a valid image reference for transport %q and reference %q: %w", docker.Transport.Name(), source, err)
+			return nil, errors.Wrapf(err, "Cannot obtain a valid image reference for transport %q and reference %q", docker.Transport.Name(), source)
 		}
 		imageTagged := !reference.IsNameOnly(named)
 		logrus.WithFields(logrus.Fields{
@@ -546,7 +480,7 @@ func imagesToCopy(source string, transport string, sourceCtx *types.SystemContex
 		if imageTagged {
 			srcRef, err := docker.NewReference(named)
 			if err != nil {
-				return nil, fmt.Errorf("Cannot obtain a valid image reference for transport %q and reference %q: %w", docker.Transport.Name(), named.String(), err)
+				return nil, errors.Wrapf(err, "Cannot obtain a valid image reference for transport %q and reference %q", docker.Transport.Name(), named.String())
 			}
 			desc.ImageRefs = []types.ImageReference{srcRef}
 		} else {
@@ -555,7 +489,7 @@ func imagesToCopy(source string, transport string, sourceCtx *types.SystemContex
 				return descriptors, err
 			}
 			if len(desc.ImageRefs) == 0 {
-				return descriptors, fmt.Errorf("No images to sync found in %q", source)
+				return descriptors, errors.Errorf("No images to sync found in %q", source)
 			}
 		}
 		descriptors = append(descriptors, desc)
@@ -566,7 +500,7 @@ func imagesToCopy(source string, transport string, sourceCtx *types.SystemContex
 		}
 
 		if _, err := os.Stat(source); err != nil {
-			return descriptors, fmt.Errorf("Invalid source directory specified: %w", err)
+			return descriptors, errors.Wrap(err, "Invalid source directory specified")
 		}
 		desc.DirBasePath = source
 		var err error
@@ -575,19 +509,43 @@ func imagesToCopy(source string, transport string, sourceCtx *types.SystemContex
 			return descriptors, err
 		}
 		if len(desc.ImageRefs) == 0 {
-			return descriptors, fmt.Errorf("No images to sync found in %q", source)
+			return descriptors, errors.Errorf("No images to sync found in %q", source)
 		}
 		descriptors = append(descriptors, desc)
+	case oci.Transport.Name():
+		desc := repoDescriptor{
+			Context: sourceCtx,
+		}
 
+		if _, err := os.Stat(source); err != nil {
+			return descriptors, errors.Wrap(err, "Invalid source directory specified")
+		}
+		desc.DirBasePath = filepath.Clean(source)
+		var err error
+		desc.ImageRefs, err = imagesToCopyFromOci(desc.DirBasePath)
+		if err != nil {
+			return descriptors, err
+		}
+		if len(desc.ImageRefs) == 0 {
+			return descriptors, errors.Errorf("No images to sync found in %q", source)
+		}
+		descriptors = append(descriptors, desc)
 	case "yaml":
 		cfg, err := newSourceConfig(source)
 		if err != nil {
 			return descriptors, err
 		}
 		for registryName, registryConfig := range cfg {
+			if len(registryConfig.Images) == 0 && len(registryConfig.ImagesByTagRegex) == 0 {
+				logrus.WithFields(logrus.Fields{
+					"registry": registryName,
+				}).Warn("No images specified for registry")
+				continue
+			}
+
 			descs, err := imagesToCopyFromRegistry(registryName, registryConfig, *sourceCtx)
 			if err != nil {
-				return descriptors, fmt.Errorf("Failed to retrieve list of images from registry %q: %w", registryName, err)
+				return descriptors, errors.Wrapf(err, "Failed to retrieve list of images from registry %q", registryName)
 			}
 			descriptors = append(descriptors, descs...)
 		}
@@ -604,34 +562,41 @@ func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 
 	policyContext, err := opts.global.getPolicyContext()
 	if err != nil {
-		return fmt.Errorf("Error loading trust policy: %w", err)
+		return errors.Wrapf(err, "Error loading trust policy")
 	}
 	defer func() {
 		if err := policyContext.Destroy(); err != nil {
-			retErr = noteCloseFailure(retErr, "tearing down policy context", err)
+			retErr = fmt.Errorf("(error tearing down policy context: %v): %w", err, retErr)
 		}
 	}()
 
 	// validate source and destination options
+	contains := func(val string, list []string) (_ bool) {
+		for _, l := range list {
+			if l == val {
+				return true
+			}
+		}
+		return
+	}
+
 	if len(opts.source) == 0 {
 		return errors.New("A source transport must be specified")
 	}
-	if !slices.Contains([]string{docker.Transport.Name(), directory.Transport.Name(), "yaml"}, opts.source) {
-		return fmt.Errorf("%q is not a valid source transport", opts.source)
+	if !contains(opts.source, []string{docker.Transport.Name(), directory.Transport.Name(), "yaml", oci.Transport.Name()}) {
+		return errors.Errorf("%q is not a valid source transport", opts.source)
 	}
 
 	if len(opts.destination) == 0 {
 		return errors.New("A destination transport must be specified")
 	}
-	if !slices.Contains([]string{docker.Transport.Name(), directory.Transport.Name()}, opts.destination) {
-		return fmt.Errorf("%q is not a valid destination transport", opts.destination)
+	if !contains(opts.destination, []string{docker.Transport.Name(), directory.Transport.Name(), oci.Transport.Name()}) {
+		return errors.Errorf("%q is not a valid destination transport", opts.destination)
 	}
 
 	if opts.source == opts.destination && opts.source == directory.Transport.Name() {
 		return errors.New("sync from 'dir' to 'dir' not implemented, consider using rsync instead")
 	}
-
-	opts.destImage.warnAboutIneffectiveOptions(transports.Get(opts.destination))
 
 	imageListSelection := copy.CopySystemImage
 	if opts.all {
@@ -656,7 +621,7 @@ func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 
 	sourceArg := args[0]
 	var srcRepoList []repoDescriptor
-	if err = retry.IfNecessary(ctx, func() error {
+	if err = retry.RetryIfNecessary(ctx, func() error {
 		srcRepoList, err = imagesToCopy(sourceArg, opts.source, sourceCtx)
 		return err
 	}, opts.retryOpts); err != nil {
@@ -669,56 +634,32 @@ func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 		return err
 	}
 
-	// c/image/copy.Image does allow creating both simple signing and sigstore signatures simultaneously,
-	// with independent passphrases, but that would make the CLI probably too confusing.
-	// For now, use the passphrase with either, but only one of them.
-	if opts.signPassphraseFile != "" && opts.signByFingerprint != "" && opts.signBySigstorePrivateKey != "" {
-		return fmt.Errorf("Only one of --sign-by and sign-by-sigstore-private-key can be used with sign-passphrase-file")
+	encLayers, encConfig, err := opts.cryptOpts.newEncryptConfig()
+	if err != nil {
+		return err
 	}
-	var passphrase string
-	if opts.signPassphraseFile != "" {
-		p, err := cli.ReadPassphraseFile(opts.signPassphraseFile)
-		if err != nil {
-			return err
-		}
-		passphrase = p
-	} else if opts.signBySigstorePrivateKey != "" {
-		p, err := promptForPassphrase(opts.signBySigstorePrivateKey, os.Stdin, os.Stdout)
-		if err != nil {
-			return err
-		}
-		passphrase = p
+	decConfig, err := opts.cryptOpts.newDecryptConfig()
+	if err != nil {
+		return err
 	}
 
-	var signers []*signer.Signer
-	if opts.signBySigstoreParamFile != "" {
-		signer, err := sigstore.NewSignerFromParameterFile(opts.signBySigstoreParamFile, &sigstore.Options{
-			PrivateKeyPassphrasePrompt: func(keyFile string) (string, error) {
-				return promptForPassphrase(keyFile, os.Stdin, os.Stdout)
-			},
-			Stdin:  os.Stdin,
-			Stdout: stdout,
-		})
-		if err != nil {
-			return fmt.Errorf("Error using --sign-by-sigstore: %w", err)
-		}
-		defer signer.Close()
-		signers = append(signers, signer)
+	passphrase, err := cli.ReadPassphraseFile(opts.signPassphraseFile)
+	if err != nil {
+		return err
 	}
-
 	options := copy.Options{
 		RemoveSignatures:                      opts.removeSignatures,
-		Signers:                               signers,
 		SignBy:                                opts.signByFingerprint,
 		SignPassphrase:                        passphrase,
-		SignBySigstorePrivateKeyFile:          opts.signBySigstorePrivateKey,
-		SignSigstorePrivateKeyPassphrase:      []byte(passphrase),
-		ReportWriter:                          stdout,
+		ReportWriter:                          os.Stdout,
 		DestinationCtx:                        destinationCtx,
 		ImageListSelection:                    imageListSelection,
 		PreserveDigests:                       opts.preserveDigests,
 		OptimizeDestinationImageAlreadyExists: true,
 		ForceManifestMIMEType:                 manifestType,
+		OciDecryptConfig:                      decConfig,
+		OciEncryptLayers:                      encLayers,
+		OciEncryptConfig:                      encConfig,
 	}
 	errorsPresent := false
 	imagesNumber := 0
@@ -726,42 +667,33 @@ func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 		logrus.Warn("Running in dry-run mode")
 	}
 
-	var digestFile *os.File
-	if opts.digestFile != "" && !opts.dryRun {
-		digestFile, err = os.OpenFile(opts.digestFile, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			return fmt.Errorf("Error creating digest file: %w", err)
-		}
-		defer func() {
-			if err := digestFile.Close(); err != nil {
-				retErr = noteCloseFailure(retErr, "closing digest file", err)
-			}
-		}()
-	}
-
 	for _, srcRepo := range srcRepoList {
 		options.SourceCtx = srcRepo.Context
 		for counter, ref := range srcRepo.ImageRefs {
 			var destSuffix string
-			var manifestBytes []byte
 			switch ref.Transport() {
 			case docker.Transport:
-				// docker -> dir or docker -> docker
-				destSuffix = ref.DockerReference().String()
+				// docker -> dir,docker,oci, trim domain
+				dockerRef := ref.DockerReference()
+				tagref, _ := reference.TagNameOnly(dockerRef).(reference.Tagged)
+				destSuffix = fmt.Sprintf("%s:%s", reference.Path(dockerRef), tagref.Tag())
+
 			case directory.Transport:
-				// dir -> docker (we don't allow `dir` -> `dir` sync operations)
+				// dir -> docker or oci -> docker(we don't allow `dir` -> `dir` sync operations)
 				destSuffix = strings.TrimPrefix(ref.StringWithinTransport(), srcRepo.DirBasePath)
 				if destSuffix == "" {
 					// if source is a full path to an image, have destPath scoped to repo:tag
 					destSuffix = path.Base(srcRepo.DirBasePath)
 				}
+			case oci.Transport:
+				destSuffix = strings.TrimPrefix(ref.StringWithinTransport(), fmt.Sprint(srcRepo.DirBasePath, ":"))
 			}
 
 			if !opts.scoped {
 				destSuffix = path.Base(destSuffix)
 			}
 
-			destRef, err := destinationReference(path.Join(destination, destSuffix)+opts.appendSuffix, opts.destination)
+			destRef, err := destinationReference(destination, destSuffix, opts.destination)
 			if err != nil {
 				return err
 			}
@@ -774,12 +706,12 @@ func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 				logrus.WithFields(fromToFields).Infof("Would have copied image ref %d/%d", counter+1, len(srcRepo.ImageRefs))
 			} else {
 				logrus.WithFields(fromToFields).Infof("Copying image ref %d/%d", counter+1, len(srcRepo.ImageRefs))
-				if err = retry.IfNecessary(ctx, func() error {
-					manifestBytes, err = copy.Image(ctx, policyContext, destRef, ref, &options)
+				if err = retry.RetryIfNecessary(ctx, func() error {
+					_, err = copy.Image(ctx, policyContext, destRef, ref, &options)
 					return err
 				}, opts.retryOpts); err != nil {
 					if !opts.keepGoing {
-						return fmt.Errorf("Error copying ref %q: %w", transports.ImageName(ref), err)
+						return errors.Wrapf(err, "Error copying ref %q", transports.ImageName(ref))
 					}
 					// log the error, keep a note that there was a failure and move on to the next
 					// image ref
@@ -787,19 +719,7 @@ func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 					logrus.WithError(err).Errorf("Error copying ref %q", transports.ImageName(ref))
 					continue
 				}
-				// Ensure that we log the manifest digest to a file only if the copy operation was successful
-				if opts.digestFile != "" {
-					manifestDigest, err := manifest.Digest(manifestBytes)
-					if err != nil {
-						return err
-					}
-					outputStr := fmt.Sprintf("%s %s", manifestDigest.String(), transports.ImageName(destRef))
-					if _, err = digestFile.WriteString(outputStr + "\n"); err != nil {
-						return fmt.Errorf("Failed to write digest to file %q: %w", opts.digestFile, err)
-					}
-				}
 			}
-
 			imagesNumber++
 		}
 	}
