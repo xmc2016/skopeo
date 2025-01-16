@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -10,46 +9,27 @@ import (
 
 	commonFlag "github.com/containers/common/pkg/flag"
 	"github.com/containers/common/pkg/retry"
-	"github.com/containers/image/v5/directory"
 	"github.com/containers/image/v5/manifest"
 	ocilayout "github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/pkg/compression"
 	"github.com/containers/image/v5/storage"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
+	encconfig "github.com/containers/ocicrypt/config"
+	enchelpers "github.com/containers/ocicrypt/helpers"
 	dockerdistributionerrcode "github.com/docker/distribution/registry/api/errcode"
 	dockerdistributionapi "github.com/docker/distribution/registry/api/v2"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"golang.org/x/term"
 )
 
-// errorShouldDisplayUsage is a subtype of error used by command handlers to indicate that the command’s help should be included.
+// errorShouldDisplayUsage is a subtype of error used by command handlers to indicate that cli.ShowSubcommandHelp should be called.
 type errorShouldDisplayUsage struct {
 	error
-}
-
-// noteCloseFailure returns (possibly-nil) err modified to account for (non-nil) closeErr.
-// The error for closeErr is annotated with description (which is not a format string)
-// Typical usage:
-//
-//	defer func() {
-//		if err := something.Close(); err != nil {
-//			returnedErr = noteCloseFailure(returnedErr, "closing something", err)
-//		}
-//	}
-func noteCloseFailure(err error, description string, closeErr error) error {
-	// We don’t accept a Closer() and close it ourselves because signature.PolicyContext has .Destroy(), not .Close().
-	// This also makes it harder for a caller to do
-	//     defer noteCloseFailure(returnedErr, …)
-	// which doesn’t use the right value of returnedErr, and doesn’t update it.
-	if err == nil {
-		return fmt.Errorf("%s: %w", description, closeErr)
-	}
-	// In this case we prioritize the primary error for use with %w; closeErr is usually less relevant, or might be a consequence of the primary error.
-	return fmt.Errorf("%w (%s: %v)", err, description, closeErr)
 }
 
 // commandAction intermediates between the RunE interface and the real handler,
@@ -60,10 +40,8 @@ func noteCloseFailure(err error, description string, closeErr error) error {
 func commandAction(handler func(args []string, stdout io.Writer) error) func(cmd *cobra.Command, args []string) error {
 	return func(c *cobra.Command, args []string) error {
 		err := handler(args, c.OutOrStdout())
-		var shouldDisplayUsage errorShouldDisplayUsage
-		if errors.As(err, &shouldDisplayUsage) {
-			c.SetOut(c.ErrOrStderr()) // This mutates c, but we are failing anyway.
-			_ = c.Help()              // Even if this failed, we prefer to report the original error
+		if _, ok := err.(errorShouldDisplayUsage); ok {
+			return c.Help()
 		}
 		return err
 	}
@@ -129,6 +107,62 @@ type dockerImageOptions struct {
 	noCreds             bool                       // Access the registry anonymously
 }
 
+// ociCryptOptions collects CLI flags specific to the encryptLayer and keys of encryption or decryption,
+// encryption-key and decryption-key cannot be specified together,
+// if set encryptLayer then encryptionKeys must be setted.
+type ociCryptOptions struct {
+	encryptLayer   []int    // The list of layers to encrypt
+	encryptionKeys []string // Keys needed to encrypt the image
+	decryptionKeys []string // Keys needed to decrypt the image
+}
+
+func cryptFlags() (pflag.FlagSet, *ociCryptOptions) {
+	opts := ociCryptOptions{}
+	fs := pflag.FlagSet{}
+	fs.StringSliceVar(&opts.encryptionKeys, "encryption-key", []string{}, "*Experimental* key with the encryption protocol to use needed to encrypt the image (e.g. jwe:/path/to/key.pem)")
+	fs.IntSliceVar(&opts.encryptLayer, "encrypt-layer", []int{}, "*Experimental* the 0-indexed layer indices, with support for negative indexing (e.g. 0 is the first layer, -1 is the last layer)")
+	fs.StringSliceVar(&opts.decryptionKeys, "decryption-key", []string{}, "*Experimental* key needed to decrypt the image")
+	return fs, &opts
+}
+
+func (opts *ociCryptOptions) newEncryptConfig() (*[]int, *encconfig.EncryptConfig, error) {
+
+	if len(opts.encryptLayer) > 0 && len(opts.encryptionKeys) == 0 {
+		return nil, nil, errors.New("--encrypt-layer can only be used with --encryption-key")
+	}
+
+	if len(opts.encryptionKeys) == 0 {
+		return nil, nil, nil
+	}
+	// encryption
+	encryptionKeys := opts.encryptionKeys
+	ecc, err := enchelpers.CreateCryptoConfig(encryptionKeys, []string{})
+	if err != nil {
+		return nil, nil, errors.Errorf("Invalid encryption keys: %v", err)
+	}
+	cc := encconfig.CombineCryptoConfigs([]encconfig.CryptoConfig{ecc})
+	return &opts.encryptLayer, cc.EncryptConfig, nil
+}
+
+func (opts *ociCryptOptions) newDecryptConfig() (*encconfig.DecryptConfig, error) {
+
+	if len(opts.encryptionKeys) > 0 && len(opts.decryptionKeys) > 0 {
+		return nil, errors.New("--encryption-key and --decryption-key cannot be specified together")
+	}
+
+	if len(opts.decryptionKeys) == 0 {
+		return nil, nil
+	}
+	// encryption
+	encryptionKeys := opts.decryptionKeys
+	ecc, err := enchelpers.CreateCryptoConfig(encryptionKeys, []string{})
+	if err != nil {
+		return nil, errors.Errorf("Invalid encryption keys: %v", err)
+	}
+	cc := encconfig.CombineCryptoConfigs([]encconfig.CryptoConfig{ecc})
+	return cc.DecryptConfig, nil
+}
+
 // imageOptions collects CLI flags which are the same across subcommands, but may be different for each image
 // (e.g. may differ between the source and destination of a copy)
 type imageOptions struct {
@@ -180,8 +214,8 @@ func imageFlags(global *globalOptions, shared *sharedImageOptions, deprecatedTLS
 	return fs, opts
 }
 
-func retryFlags() (pflag.FlagSet, *retry.Options) {
-	opts := retry.Options{}
+func retryFlags() (pflag.FlagSet, *retry.RetryOptions) {
+	opts := retry.RetryOptions{}
 	fs := pflag.FlagSet{}
 	fs.IntVar(&opts.MaxRetry, "retry-times", 0, "the number of times to possibly retry")
 	return fs, &opts
@@ -250,7 +284,6 @@ func (opts *imageOptions) newSystemContext() (*types.SystemContext, error) {
 }
 
 // imageDestOptions is a superset of imageOptions specialized for image destinations.
-// Every user should call imageDestOptions.warnAboutIneffectiveOptions() as part of handling the CLI
 type imageDestOptions struct {
 	*imageOptions
 	dirForceCompression         bool                   // Compress layers when saving to the dir: transport
@@ -259,13 +292,12 @@ type imageDestOptions struct {
 	compressionFormat           string                 // Format to use for the compression
 	compressionLevel            commonFlag.OptionalInt // Level to use for the compression
 	precomputeDigests           bool                   // Precompute digests to dedup layers when saving to the docker: transport
-	imageDestFlagPrefix         string
 }
 
 // imageDestFlags prepares a collection of CLI flags writing into imageDestOptions, and the managed imageDestOptions structure.
 func imageDestFlags(global *globalOptions, shared *sharedImageOptions, deprecatedTLSVerify *deprecatedTLSVerifyOption, flagPrefix, credsOptionAlias string) (pflag.FlagSet, *imageDestOptions) {
 	genericFlags, genericOptions := imageFlags(global, shared, deprecatedTLSVerify, flagPrefix, credsOptionAlias)
-	opts := imageDestOptions{imageOptions: genericOptions, imageDestFlagPrefix: flagPrefix}
+	opts := imageDestOptions{imageOptions: genericOptions}
 	fs := pflag.FlagSet{}
 	fs.AddFlagSet(&genericFlags)
 	fs.BoolVar(&opts.dirForceCompression, flagPrefix+"compress", false, "Compress tarball image layers when saving to directory using the 'dir' transport. (default is same compression type as source)")
@@ -303,28 +335,18 @@ func (opts *imageDestOptions) newSystemContext() (*types.SystemContext, error) {
 	return ctx, err
 }
 
-// warnAboutIneffectiveOptions warns if any ineffective option was set by the user
-// Every user should call this as part of handling the CLI
-func (opts *imageDestOptions) warnAboutIneffectiveOptions(destTransport types.ImageTransport) {
-	if destTransport.Name() != directory.Transport.Name() {
-		if opts.dirForceCompression {
-			logrus.Warnf("--%s can only be used if the destination transport is 'dir'", opts.imageDestFlagPrefix+"compress")
-		}
-		if opts.dirForceDecompression {
-			logrus.Warnf("--%s can only be used if the destination transport is 'dir'", opts.imageDestFlagPrefix+"decompress")
-		}
-	}
-}
-
 func parseCreds(creds string) (string, string, error) {
 	if creds == "" {
 		return "", "", errors.New("credentials can't be empty")
 	}
-	username, password, _ := strings.Cut(creds, ":") // Sets password to "" if there is no ":"
-	if username == "" {
+	up := strings.SplitN(creds, ":", 2)
+	if len(up) == 1 {
+		return up[0], "", nil
+	}
+	if up[0] == "" {
 		return "", "", errors.New("username can't be empty")
 	}
-	return username, password, nil
+	return up[0], up[1], nil
 }
 
 func getDockerAuth(creds string) (*types.DockerAuthConfig, error) {
@@ -367,6 +389,22 @@ func parseManifestFormat(manifestFormat string) (string, error) {
 	}
 }
 
+// promptForPassphrase interactively prompts for a passphrase related to privateKeyFile
+func promptForPassphrase(privateKeyFile string, stdin, stdout *os.File) (string, error) {
+	stdinFd := int(stdin.Fd())
+	if !term.IsTerminal(stdinFd) {
+		return "", fmt.Errorf("Cannot prompt for a passphrase for key %s, standard input is not a TTY", privateKeyFile)
+	}
+
+	fmt.Fprintf(stdout, "Passphrase for key %s: ", privateKeyFile)
+	passphrase, err := term.ReadPassword(stdinFd)
+	if err != nil {
+		return "", fmt.Errorf("Error reading password: %w", err)
+	}
+	fmt.Fprintf(stdout, "\n")
+	return string(passphrase), nil
+}
+
 // usageTemplate returns the usage template for skopeo commands
 // This blocks the displaying of the global options. The main skopeo
 // command should not use this.
@@ -396,34 +434,40 @@ func adjustUsage(c *cobra.Command) {
 	c.DisableFlagsInUseLine = true
 }
 
-// promptForPassphrase interactively prompts for a passphrase related to privateKeyFile
-func promptForPassphrase(privateKeyFile string, stdin, stdout *os.File) (string, error) {
-	stdinFd := int(stdin.Fd())
-	if !term.IsTerminal(stdinFd) {
-		return "", fmt.Errorf("Cannot prompt for a passphrase for key %s, standard input is not a TTY", privateKeyFile)
+func checkExistAndMkdir(destination string) error {
+	_, err := os.Stat(destination)
+	if err == nil {
+		return errors.Errorf("Refusing to overwrite destination directory %q", destination)
+	}
+	if !os.IsNotExist(err) {
+		return errors.Wrap(err, "Destination directory could not be used")
+	}
+	// the directory holding the image must be created here
+	if err = os.MkdirAll(destination, 0755); err != nil {
+		return errors.Wrapf(err, "Error creating directory for image %s", destination)
 	}
 
-	fmt.Fprintf(stdout, "Passphrase for key %s: ", privateKeyFile)
-	passphrase, err := term.ReadPassword(stdinFd)
-	if err != nil {
-		return "", fmt.Errorf("Error reading password: %w", err)
-	}
-	fmt.Fprintf(stdout, "\n")
-	return string(passphrase), nil
+	return nil
 }
 
-// isNotFoundImageError heuristically attempts to determine whether an error
-// is saying the remote source couldn't find the image (as opposed to an
-// authentication error, an I/O error etc.)
-// TODO drive this into containers/image properly
+func noteCloseFailure(err error, description string, closeErr error) error {
+	// We don’t accept a Closer() and close it ourselves because signature.PolicyContext has .Destroy(), not .Close().
+	// This also makes it harder for a caller to do
+	//     defer noteCloseFailure(returnedErr, …)
+	// which doesn’t use the right value of returnedErr, and doesn’t update it.
+	if err == nil {
+		return fmt.Errorf("%s: %w", description, closeErr)
+	}
+	// In this case we prioritize the primary error for use with %w; closeErr is usually less relevant, or might be a consequence of the primary error.
+	return fmt.Errorf("%w (%s: %v)", err, description, closeErr)
+}
+
 func isNotFoundImageError(err error) bool {
 	return isDockerManifestUnknownError(err) ||
 		errors.Is(err, storage.ErrNoSuchImage) ||
 		errors.Is(err, ocilayout.ImageNotFoundError{})
 }
 
-// isDockerManifestUnknownError is a copy of code from containers/image,
-// please update there first.
 func isDockerManifestUnknownError(err error) bool {
 	var ec dockerdistributionerrcode.ErrorCoder
 	if !errors.As(err, &ec) {
