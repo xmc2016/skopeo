@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-
 	"strings"
 
 	commonFlag "github.com/containers/common/pkg/flag"
@@ -47,7 +46,7 @@ func copyCmd(global *globalOptions) *cobra.Command {
 	destFlags, destOpts := imageDestFlags(global, sharedOpts, deprecatedTLSVerifyOpt, "dest-", "dcreds")
 	retryFlags, retryOpts := retryFlags()
 	cryptFlags, cryptOpts := cryptFlags()
-	
+
 	opts := copyOptions{global: global,
 		deprecatedTLSVerify: deprecatedTLSVerifyOpt,
 		srcImage:            srcOpts,
