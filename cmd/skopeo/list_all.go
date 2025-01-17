@@ -17,10 +17,11 @@ import (
 )
 
 type listAllOptions struct {
-	global    *globalOptions
-	image     *imageOptions
-	retryOpts *retry.Options
-	output    string // 新增参数，用于指定输出文件
+	global       *globalOptions
+	image        *imageOptions
+	retryOpts    *retry.Options
+	output       string // 新增参数，用于指定输出文件
+	registryType string // 新增参数，用于指定 registry 类型
 }
 
 type registryOutput struct {
@@ -43,10 +44,11 @@ func listAllCmd(global *globalOptions) *cobra.Command {
 	retryFlags, retryOpts := retryFlags()
 
 	opts := listAllOptions{
-		global:    global,
-		image:     imageOpts,
-		retryOpts: retryOpts,
-		output:    "skopeo_sync.yaml", // 默认输出文件
+		global:       global,
+		image:        imageOpts,
+		retryOpts:    retryOpts,
+		output:       "images.yaml", // 默认输出文件
+		registryType: "registry",    // 默认值为 registry
 	}
 
 	cmd := &cobra.Command{
@@ -68,6 +70,8 @@ See skopeo-list-all(1) section "REPOSITORY NAMES" for the expected format
 	flags.AddFlagSet(&imageFlags)
 	flags.AddFlagSet(&retryFlags)
 	flags.StringVarP(&opts.output, "output", "o", "images.yaml", "Output file")
+	flags.StringVar(&opts.registryType, "registry-type", "registry", "Specify the registry type (e.g., registry, harbor)")
+
 	return cmd
 }
 
@@ -96,11 +100,16 @@ func (opts *listAllOptions) run(args []string, stdout io.Writer) (retErr error) 
 	}
 
 	var repositoryNames []string
-	if val, ok := repoTransportHandlers[transport.Name()]; ok {
-		repositoryNames, err = val(ctx, sys, &reposOptions{global: opts.global, image: opts.image, retryOpts: opts.retryOpts}, "docker://"+registryURL)
+
+	if opts.registryType == "harbor" {
+		repositoryNames, err = listHarborRepos(ctx, sys, &reposOptions{global: opts.global, image: opts.image, retryOpts: opts.retryOpts}, "docker://"+registryURL)
 	} else {
-		return fmt.Errorf("unsupported transport '%s' for repository listing. Only supported: %s",
-			transport.Name(), supportedRepoTransports(", "))
+		if val, ok := repoTransportHandlers[transport.Name()]; ok {
+			repositoryNames, err = val(ctx, sys, &reposOptions{global: opts.global, image: opts.image, retryOpts: opts.retryOpts}, "docker://"+registryURL)
+		} else {
+			return fmt.Errorf("unsupported transport '%s' for repository listing. Only supported: %s",
+				transport.Name(), supportedRepoTransports(", "))
+		}
 	}
 
 	if err != nil {
@@ -122,7 +131,12 @@ func (opts *listAllOptions) run(args []string, stdout io.Writer) (retErr error) 
 	}
 
 	for _, repo := range repositoryNames {
-		tags, err := listTags(ctx, sys, "docker://"+registryURL+"/"+repo)
+		var tags []string
+		if opts.registryType == "harbor" {
+			_, tags, err = listHarborRepoTags(ctx, sys, &tagsOptions{global: opts.global, image: opts.image, retryOpts: opts.retryOpts}, "docker://"+registryURL+"/"+repo)
+		} else {
+			tags, err = listTags(ctx, sys, "docker://"+registryURL+"/"+repo)
+		}
 		if err != nil {
 			return err
 		}
