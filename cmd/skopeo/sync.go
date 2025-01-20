@@ -19,6 +19,7 @@ import (
 	"github.com/containers/image/v5/docker/reference"
 	oci "github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/pkg/cli"
+	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/types"
 	"github.com/opencontainers/go-digest"
@@ -554,6 +555,11 @@ func imagesToCopy(source string, transport string, sourceCtx *types.SystemContex
 	return descriptors, nil
 }
 
+func copyImage(ctx context.Context, policyContext *signature.PolicyContext, destRef, srcRef types.ImageReference, options *copy.Options) error {
+	_, err := copy.Image(ctx, policyContext, destRef, srcRef, options)
+	return err
+}
+
 func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 	if len(args) != 2 {
 		return errorShouldDisplayUsage{errors.New("Exactly two arguments expected")}
@@ -608,6 +614,9 @@ func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 		return err
 	}
 
+	// 设置 DockerInsecureSkipTLSVerify 选项
+	sourceCtx.DockerInsecureSkipTLSVerify = types.NewOptionalBool(true)
+
 	var manifestType string
 	if opts.format.Present() {
 		manifestType, err = parseManifestFormat(opts.format.Value())
@@ -633,6 +642,9 @@ func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 	if err != nil {
 		return err
 	}
+
+	// 设置 DockerInsecureSkipTLSVerify 选项
+	destinationCtx.DockerInsecureSkipTLSVerify = types.NewOptionalBool(true)
 
 	encLayers, encConfig, err := opts.cryptOpts.newEncryptConfig()
 	if err != nil {
@@ -690,7 +702,7 @@ func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 			}
 
 			if !opts.scoped {
-				destSuffix = path.Base(destSuffix)
+				destSuffix = path.Join(filepath.Dir(sourceArg), destSuffix)
 			}
 
 			destRef, err := destinationReference(destination, destSuffix, opts.destination)
@@ -707,8 +719,7 @@ func (opts *syncOptions) run(args []string, stdout io.Writer) (retErr error) {
 			} else {
 				logrus.WithFields(fromToFields).Infof("Copying image ref %d/%d", counter+1, len(srcRepo.ImageRefs))
 				if err = retry.RetryIfNecessary(ctx, func() error {
-					_, err = copy.Image(ctx, policyContext, destRef, ref, &options)
-					return err
+					return copyImage(ctx, policyContext, destRef, ref, &options)
 				}, opts.retryOpts); err != nil {
 					if !opts.keepGoing {
 						return errors.Wrapf(err, "Error copying ref %q", transports.ImageName(ref))
